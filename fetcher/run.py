@@ -15,6 +15,7 @@ from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.lever import LeverSource
 from fetcher.sources.recruitee import RecruiteeSource
+from fetcher.sources.remoteok import RemoteOKSource
 from fetcher.sources.smartrecruiters import SmartRecruitersSource
 from fetcher.sources.workable import WorkableSource
 from fetcher.store import prune_job_files, write_health, write_jobs
@@ -31,6 +32,7 @@ def build_sources() -> list[Source]:
         WorkableSource(companies.get("workable") or {}),
         RecruiteeSource(companies.get("recruitee") or {}),
         SmartRecruitersSource(companies.get("smartrecruiters") or {}),
+        RemoteOKSource(),
     ]
 
 
