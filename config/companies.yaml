@@ -3,3 +3,7 @@ greenhouse:
   gitlab: GitLab
   airbnb: Airbnb
   anthropic: Anthropic
+
+lever:
+  palantir: Palantir
+  spotify: Spotify

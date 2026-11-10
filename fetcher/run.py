@@ -12,6 +12,7 @@ from fetcher.http import create_client
 from fetcher.normalize import load_config, normalize_job
 from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
+from fetcher.sources.lever import LeverSource
 from fetcher.store import write_health, write_jobs
 
 log = logging.getLogger("fetcher")
@@ -19,7 +20,10 @@ log = logging.getLogger("fetcher")
 
 def build_sources() -> list[Source]:
     companies = load_config("companies.yaml")
-    return [GreenhouseSource(companies.get("greenhouse") or {})]
+    return [
+        GreenhouseSource(companies.get("greenhouse") or {}),
+        LeverSource(companies.get("lever") or {}),
+    ]
 
 
 def run_source(source: Source, client: httpx.Client) -> FetchResult:

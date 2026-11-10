@@ -1,51 +1,27 @@
 """Greenhouse public job board API (one board per company)."""
 
 import html
-import logging
 
 import httpx
 
 from fetcher import http
 from fetcher.models import Job, make_job_id
 from fetcher.normalize import html_to_text
-from fetcher.sources.base import FetchResult, Source, describe_error
+from fetcher.sources.base import BoardSource
 
 API_URL = "https://boards-api.greenhouse.io/v1/boards/{token}/jobs"
 
-log = logging.getLogger(__name__)
 
-
-class GreenhouseSource(Source):
+class GreenhouseSource(BoardSource):
     name = "greenhouse"
 
-    def __init__(self, boards: dict[str, str]) -> None:
-        """boards: board token -> company display name."""
-        self.boards = boards
+    def fetch_items(self, client: httpx.Client, token: str) -> list[dict]:
+        response = http.get(
+            client, API_URL.format(token=token), params={"content": "true"}
+        )
+        return response.json().get("jobs", [])
 
-    def fetch(self, client: httpx.Client) -> FetchResult:
-        result = FetchResult()
-        for token, company in self.boards.items():
-            try:
-                response = http.get(
-                    client, API_URL.format(token=token), params={"content": "true"}
-                )
-                items = response.json().get("jobs", [])
-            except (httpx.HTTPError, ValueError) as exc:
-                error = f"{self.name}/{token}: {describe_error(exc)}"
-                log.warning(error)
-                result.errors.append(error)
-                continue
-
-            for item in items:
-                try:
-                    result.jobs.append(self._parse(item, token, company))
-                except (KeyError, TypeError, ValueError) as exc:
-                    result.errors.append(
-                        f"{self.name}/{token}: bad job ({describe_error(exc)})"
-                    )
-        return result
-
-    def _parse(self, item: dict, token: str, company: str) -> Job:
+    def parse(self, item: dict, token: str, company: str) -> Job:
         job_id = str(item["id"])
         url = item.get("absolute_url")
         return Job(
