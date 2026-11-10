@@ -2,10 +2,12 @@
 
 import argparse
 import logging
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from dotenv import load_dotenv
 
 from fetcher.filters import keep_job
 from fetcher.http import create_client
@@ -20,6 +22,7 @@ from fetcher.sources.jobicy import JobicySource
 from fetcher.sources.lever import LeverSource
 from fetcher.sources.mycareersfuture import MyCareersFutureSource
 from fetcher.sources.recruitee import RecruiteeSource
+from fetcher.sources.reed import ReedSource
 from fetcher.sources.remoteok import RemoteOKSource
 from fetcher.sources.remotive import RemotiveSource
 from fetcher.sources.smartrecruiters import SmartRecruitersSource
@@ -49,6 +52,7 @@ def build_sources() -> list[Source]:
         ArbeitnowSource(),
         ArbeitsagenturSource(),
         MyCareersFutureSource(),
+        ReedSource(os.environ.get("REED_API_KEY")),
     ]
 
 
@@ -65,6 +69,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch tech jobs from all sources.")
     parser.add_argument("--out", type=Path, default=Path("data"), help="output folder")
     args = parser.parse_args()
+    load_dotenv()  # local .env; in GitHub Actions keys come from Secrets as env vars
 
     logging.basicConfig(
         level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
