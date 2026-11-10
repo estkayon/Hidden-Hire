@@ -1,5 +1,16 @@
 # All matching is case-insensitive and on whole words.
 
+# Search terms for sources that need a query (country boards, Adzuna, Reed).
+search_queries:
+  - Machine Learning
+  - Data Scientist
+  - Data Engineer
+  - Data Analyst
+  - Software Engineer
+  - Backend Developer
+  - DevOps
+  - Python
+
 # Title must contain at least one of these to count as a tech job.
 tech_titles:
   - ai

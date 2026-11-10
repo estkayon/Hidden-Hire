@@ -4,22 +4,13 @@ import httpx
 
 from fetcher import http
 from fetcher.models import Job, make_job_id
-from fetcher.normalize import lookup_country
+from fetcher.normalize import load_config, lookup_country
 from fetcher.sources.base import FeedSource
 
 API_URL = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v6/jobs"
 HEADERS = {"X-API-Key": "jobboerse-jobsuche"}
 JOB_PAGE_URL = "https://www.arbeitsagentur.de/jobsuche/jobdetail/{ref}"
-QUERIES = [
-    "Machine Learning",
-    "Data Scientist",
-    "Data Engineer",
-    "Data Analyst",
-    "Software Engineer",
-    "Backend Developer",
-    "DevOps",
-    "Python",
-]
+
 DEFAULT_COUNTRY = "DE"
 
 
@@ -28,7 +19,7 @@ class ArbeitsagenturSource(FeedSource):
 
     def fetch_items(self, client: httpx.Client) -> list[dict]:
         items: dict[str, dict] = {}
-        for query in QUERIES:
+        for query in load_config("keywords.yaml")["search_queries"]:
             params = {
                 "was": query,
                 "angebotsart": 1,

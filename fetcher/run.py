@@ -18,6 +18,7 @@ from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.himalayas import HimalayasSource
 from fetcher.sources.jobicy import JobicySource
 from fetcher.sources.lever import LeverSource
+from fetcher.sources.mycareersfuture import MyCareersFutureSource
 from fetcher.sources.recruitee import RecruiteeSource
 from fetcher.sources.remoteok import RemoteOKSource
 from fetcher.sources.remotive import RemotiveSource
@@ -47,6 +48,7 @@ def build_sources() -> list[Source]:
         WorkingNomadsSource(),
         ArbeitnowSource(),
         ArbeitsagenturSource(),
+        MyCareersFutureSource(),
     ]
 
 
