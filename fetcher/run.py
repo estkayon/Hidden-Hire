@@ -15,7 +15,7 @@ from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.lever import LeverSource
 from fetcher.sources.workable import WorkableSource
-from fetcher.store import write_health, write_jobs
+from fetcher.store import prune_job_files, write_health, write_jobs
 
 log = logging.getLogger("fetcher")
 
@@ -57,7 +57,7 @@ def main() -> None:
     with create_client() as client:
         for source in build_sources():
             result = run_source(source, client)
-            jobs = [normalize_job(job) for job in result.jobs if keep_job(job)]
+            jobs = [normalize_job(job) for job in result.jobs if keep_job(job, now)]
             kept.extend(jobs)
             health.append(
                 {
@@ -76,8 +76,11 @@ def main() -> None:
             )
 
     written = write_jobs(kept, args.out, now)
+    removed = prune_job_files(args.out, now)
     write_health(health, args.out, now)
-    log.info("wrote %d new jobs to %s", written, args.out)
+    log.info(
+        "wrote %d new jobs, removed %d old files in %s", written, removed, args.out
+    )
 
 
 if __name__ == "__main__":
