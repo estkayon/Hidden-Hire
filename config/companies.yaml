@@ -1,0 +1,5 @@
+# ATS boards per source. Board token -> company display name.
+greenhouse:
+  gitlab: GitLab
+  airbnb: Airbnb
+  anthropic: Anthropic
