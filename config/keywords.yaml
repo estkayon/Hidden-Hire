@@ -1,0 +1,75 @@
+# All matching is case-insensitive and on whole words.
+
+# Title must contain at least one of these to count as a tech job.
+tech_titles:
+  - ai
+  - artificial intelligence
+  - machine learning
+  - ml
+  - mlops
+  - llm
+  - deep learning
+  - nlp
+  - computer vision
+  - data scientist
+  - data science
+  - data engineer
+  - data engineering
+  - data analyst
+  - analytics engineer
+  - research engineer
+  - research scientist
+  - applied scientist
+  - software engineer
+  - software developer
+  - developer
+  - programmer
+  - backend
+  - back-end
+  - frontend
+  - front-end
+  - full stack
+  - full-stack
+  - fullstack
+  - web developer
+  - python
+  - devops
+  - sre
+  - site reliability
+  - cloud
+  - platform engineer
+  - infrastructure engineer
+
+# Title containing any of these is dropped, even if it matched above.
+exclude_titles:
+  - sales
+  - account executive
+  - account manager
+  - recruiter
+  - recruiting
+  - talent
+  - marketing
+  - renewals
+  - customer success
+  - legal
+  - counsel
+  - finance
+  - accountant
+  - payroll
+  - benefits
+  - human resources
+  - executive assistant
+
+# Roles clearly above intern/junior/mid level are dropped.
+senior_titles:
+  - senior
+  - sr
+  - staff
+  - principal
+  - lead
+  - head
+  - director
+  - vp
+  - vice president
+  - chief
+  - manager

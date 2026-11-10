@@ -1,0 +1,58 @@
+# ISO 3166-1 alpha-2 codes. Countries not listed are tier 3.
+tiers:
+  1: [BD, US, GB, SG, DE, NL, IE, PL, SE, FR, ES, IT, BE, AT, DK, FI, PT, CZ,
+      EE, LT, LV, LU, RO, HU, GR, SK, SI, HR, BG, CY, MT]
+  2: [CA, AU, CH, AE, JP, MY, IN, NP, BT, LK, MM]
+
+# Extra country names pycountry does not know. Lowercase name -> ISO code.
+country_aliases:
+  uk: GB
+  england: GB
+  scotland: GB
+  wales: GB
+  usa: US
+  us: US
+  u.s.: US
+  america: US
+  deutschland: DE
+  holland: NL
+
+# Known cities. Lowercase name -> ISO code.
+city_aliases:
+  london: GB
+  manchester: GB
+  san francisco: US
+  new york: US
+  nyc: US
+  seattle: US
+  boston: US
+  austin: US
+  berlin: DE
+  munich: DE
+  hamburg: DE
+  amsterdam: NL
+  amsterdam: NL
+  dublin: IE
+  warsaw: PL
+  krakow: PL
+  stockholm: SE
+  paris: FR
+  dhaka: BD
+  chittagong: BD
+  bangalore: IN
+  bengaluru: IN
+  hyderabad: IN
+  pune: IN
+  mumbai: IN
+  toronto: CA
+  vancouver: CA
+  sydney: AU
+  melbourne: AU
+  zurich: CH
+  dubai: AE
+  tokyo: JP
+  kuala lumpur: MY
+
+# Words that mark a remote job's scope.
+worldwide_words: [anywhere, worldwide, global, globally]
+region_words: [emea, europe, eu, americas, latam, apac, asia, north america]
