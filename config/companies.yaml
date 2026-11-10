@@ -17,3 +17,7 @@ workable:
 
 recruitee:
   bunq: bunq
+
+# Identifiers are case-sensitive.
+smartrecruiters:
+  BoschGroup: Bosch

@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from fetcher.filters import is_fresh, is_tech, is_too_senior
+from fetcher.filters import is_fresh, is_open_to_bd, is_tech, is_too_senior
 from fetcher.models import Job
 
 NOW = datetime(2026, 11, 10, 9, 0, tzinfo=UTC)
@@ -55,3 +55,27 @@ def test_senior_titles_flagged(title):
 
 def test_junior_title_not_senior():
     assert not is_too_senior("Associate Software Engineer")
+
+
+@pytest.mark.parametrize(
+    "work_type, country, description, expected",
+    [
+        ("onsite", "DE", "Python, SQL. Relocation support offered.", True),
+        ("onsite", "DE", "We are unable to sponsor work visas.", False),
+        ("hybrid", "US", "Must be legally authorized to work in the US.", False),
+        ("remote", "US", "No visa sponsorship.", True),
+        ("onsite", "BD", "Citizens only.", True),
+        ("unknown", None, "Requires active security clearance.", False),
+    ],
+)
+def test_is_open_to_bd(work_type, country, description, expected):
+    job = Job(
+        id="x",
+        source="test",
+        title="ML Engineer",
+        company="Acme",
+        work_type=work_type,
+        country=country,
+        description=description,
+    )
+    assert is_open_to_bd(job) is expected

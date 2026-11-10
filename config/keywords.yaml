@@ -60,6 +60,41 @@ exclude_titles:
   - human resources
   - executive assistant
 
+# Onsite/hybrid jobs outside Bangladesh are dropped when the title or
+# description contains any of these. Remote jobs are always kept.
+eligibility_blockers:
+  - no visa sponsorship
+  - visa sponsorship is not available
+  - sponsorship is not available
+  - sponsorship not available
+  - without sponsorship
+  - without visa sponsorship
+  - unable to sponsor
+  - not able to sponsor
+  - cannot sponsor
+  - can't sponsor
+  - will not sponsor
+  - won't sponsor
+  - do not sponsor
+  - does not sponsor
+  - do not offer visa sponsorship
+  - does not offer visa sponsorship
+  - must have the right to work
+  - must have right to work
+  - must already have the right to work
+  - must be authorized to work
+  - must be legally authorized to work
+  - must be eligible to work in
+  - citizens only
+  - citizenship is required
+  - must be a us citizen
+  - must be a u.s. citizen
+  - must be a citizen
+  - security clearance
+  - permanent residents only
+  - eu work permit required
+  - valid work permit required
+
 # Roles clearly above intern/junior/mid level are dropped.
 senior_titles:
   - senior

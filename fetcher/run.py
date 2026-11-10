@@ -15,6 +15,7 @@ from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.lever import LeverSource
 from fetcher.sources.recruitee import RecruiteeSource
+from fetcher.sources.smartrecruiters import SmartRecruitersSource
 from fetcher.sources.workable import WorkableSource
 from fetcher.store import prune_job_files, write_health, write_jobs
 
@@ -29,6 +30,7 @@ def build_sources() -> list[Source]:
         AshbySource(companies.get("ashby") or {}),
         WorkableSource(companies.get("workable") or {}),
         RecruiteeSource(companies.get("recruitee") or {}),
+        SmartRecruitersSource(companies.get("smartrecruiters") or {}),
     ]
 
 
@@ -59,7 +61,9 @@ def main() -> None:
     with create_client() as client:
         for source in build_sources():
             result = run_source(source, client)
-            jobs = [normalize_job(job) for job in result.jobs if keep_job(job, now)]
+            jobs = [
+                job for job in map(normalize_job, result.jobs) if keep_job(job, now)
+            ]
             kept.extend(jobs)
             health.append(
                 {
