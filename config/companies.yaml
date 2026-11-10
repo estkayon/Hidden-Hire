@@ -11,3 +11,6 @@ lever:
 ashby:
   openai: OpenAI
   ramp: Ramp
+
+workable:
+  huggingface: Hugging Face

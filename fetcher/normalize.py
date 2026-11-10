@@ -170,7 +170,7 @@ def normalize_job(job: Job) -> Job:
 
     remote_scope = job.remote_scope
     if work_type == "remote" and remote_scope == "unknown":
-        remote_scope = detect_remote_scope(job.location_raw, country)
+        remote_scope = detect_remote_scope(f"{job.title} {job.location_raw}", country)
 
     return job.model_copy(
         update={
