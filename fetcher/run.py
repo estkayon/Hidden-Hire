@@ -10,6 +10,7 @@ import httpx
 from fetcher.filters import keep_job
 from fetcher.http import create_client
 from fetcher.normalize import load_config, normalize_job
+from fetcher.sources.ashby import AshbySource
 from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.lever import LeverSource
@@ -23,6 +24,7 @@ def build_sources() -> list[Source]:
     return [
         GreenhouseSource(companies.get("greenhouse") or {}),
         LeverSource(companies.get("lever") or {}),
+        AshbySource(companies.get("ashby") or {}),
     ]
 
 

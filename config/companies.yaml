@@ -7,3 +7,7 @@ greenhouse:
 lever:
   palantir: Palantir
   spotify: Spotify
+
+ashby:
+  openai: OpenAI
+  ramp: Ramp
