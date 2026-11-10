@@ -9,6 +9,7 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 
+from fetcher.dedup import dedup_jobs
 from fetcher.filters import keep_job
 from fetcher.http import create_client
 from fetcher.normalize import load_config, normalize_job
@@ -106,7 +107,9 @@ def main() -> None:
                 len(result.errors),
             )
 
-    written = write_jobs(kept, args.out, now)
+    merged = dedup_jobs(kept)
+    log.info("dedup: %d jobs -> %d", len(kept), len(merged))
+    written = write_jobs(merged, args.out, now)
     removed = prune_job_files(args.out, now)
     write_health(health, args.out, now)
     log.info(

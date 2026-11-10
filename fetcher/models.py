@@ -52,6 +52,9 @@ class Job(BaseModel):
     fetched_at: datetime = Field(default_factory=utc_now)
 
     tags: list[str] = Field(default_factory=list)
+    also_seen: list[str] = Field(
+        default_factory=list
+    )  # "source: url" of merged duplicates
 
     @field_validator("posted_at", "fetched_at")
     @classmethod
