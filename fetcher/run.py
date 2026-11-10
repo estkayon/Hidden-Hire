@@ -14,6 +14,7 @@ from fetcher.sources.ashby import AshbySource
 from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.lever import LeverSource
+from fetcher.sources.recruitee import RecruiteeSource
 from fetcher.sources.workable import WorkableSource
 from fetcher.store import prune_job_files, write_health, write_jobs
 
@@ -27,6 +28,7 @@ def build_sources() -> list[Source]:
         LeverSource(companies.get("lever") or {}),
         AshbySource(companies.get("ashby") or {}),
         WorkableSource(companies.get("workable") or {}),
+        RecruiteeSource(companies.get("recruitee") or {}),
     ]
 
 
