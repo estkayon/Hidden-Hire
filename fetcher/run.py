@@ -17,6 +17,7 @@ from fetcher.sources.arbeitsagentur import ArbeitsagenturSource
 from fetcher.sources.ashby import AshbySource
 from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
+from fetcher.sources.hackernews import HackerNewsSource
 from fetcher.sources.himalayas import HimalayasSource
 from fetcher.sources.jobicy import JobicySource
 from fetcher.sources.lever import LeverSource
@@ -53,6 +54,7 @@ def build_sources() -> list[Source]:
         ArbeitsagenturSource(),
         MyCareersFutureSource(),
         ReedSource(os.environ.get("REED_API_KEY")),
+        HackerNewsSource(),
     ]
 
 
