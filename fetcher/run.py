@@ -22,6 +22,7 @@ from fetcher.sources.remotive import RemotiveSource
 from fetcher.sources.smartrecruiters import SmartRecruitersSource
 from fetcher.sources.weworkremotely import WeWorkRemotelySource
 from fetcher.sources.workable import WorkableSource
+from fetcher.sources.workingnomads import WorkingNomadsSource
 from fetcher.store import prune_job_files, write_health, write_jobs
 
 log = logging.getLogger("fetcher")
@@ -41,6 +42,7 @@ def build_sources() -> list[Source]:
         WeWorkRemotelySource(),
         HimalayasSource(),
         JobicySource(),
+        WorkingNomadsSource(),
     ]
 
 
