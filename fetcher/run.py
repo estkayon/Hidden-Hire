@@ -18,6 +18,7 @@ from fetcher.sources.recruitee import RecruiteeSource
 from fetcher.sources.remoteok import RemoteOKSource
 from fetcher.sources.remotive import RemotiveSource
 from fetcher.sources.smartrecruiters import SmartRecruitersSource
+from fetcher.sources.weworkremotely import WeWorkRemotelySource
 from fetcher.sources.workable import WorkableSource
 from fetcher.store import prune_job_files, write_health, write_jobs
 
@@ -35,6 +36,7 @@ def build_sources() -> list[Source]:
         SmartRecruitersSource(companies.get("smartrecruiters") or {}),
         RemoteOKSource(),
         RemotiveSource(),
+        WeWorkRemotelySource(),
     ]
 
 
