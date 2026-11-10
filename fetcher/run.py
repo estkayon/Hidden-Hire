@@ -11,6 +11,7 @@ from fetcher.filters import keep_job
 from fetcher.http import create_client
 from fetcher.normalize import load_config, normalize_job
 from fetcher.sources.arbeitnow import ArbeitnowSource
+from fetcher.sources.arbeitsagentur import ArbeitsagenturSource
 from fetcher.sources.ashby import AshbySource
 from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
@@ -45,6 +46,7 @@ def build_sources() -> list[Source]:
         JobicySource(),
         WorkingNomadsSource(),
         ArbeitnowSource(),
+        ArbeitsagenturSource(),
     ]
 
 
