@@ -1,0 +1,36 @@
+# Personal data (never commit)
+profile/
+cv/
+data/
+output/
+backups/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example
+settings.yaml
+!settings.example.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Frontend
+node_modules/
+web/dist/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
