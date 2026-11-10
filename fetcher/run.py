@@ -14,6 +14,7 @@ from fetcher.sources.ashby import AshbySource
 from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.himalayas import HimalayasSource
+from fetcher.sources.jobicy import JobicySource
 from fetcher.sources.lever import LeverSource
 from fetcher.sources.recruitee import RecruiteeSource
 from fetcher.sources.remoteok import RemoteOKSource
@@ -39,6 +40,7 @@ def build_sources() -> list[Source]:
         RemotiveSource(),
         WeWorkRemotelySource(),
         HimalayasSource(),
+        JobicySource(),
     ]
 
 
