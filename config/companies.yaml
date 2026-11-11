@@ -3,6 +3,7 @@ greenhouse:
   gitlab: GitLab
   airbnb: Airbnb
   anthropic: Anthropic
+  instacart: Instacart
 
 lever:
   palantir: Palantir
@@ -25,3 +26,4 @@ recruitee:
 # Identifiers are case-sensitive.
 smartrecruiters:
   BoschGroup: Bosch
+  wayfair: Wayfair
