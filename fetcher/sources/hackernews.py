@@ -41,6 +41,17 @@ def _split_header(text: str) -> tuple[str, str, str]:
     return company, title, location
 
 
+def _has_header(raw_html: str) -> bool:
+    """Skip comments that do not follow the 'Company | Role | ...' format or name no role."""
+    if "|" not in raw_html:
+        return False
+    try:
+        _split_header(html_to_text(html.unescape(raw_html)))
+    except ValueError:
+        return False
+    return True
+
+
 class HackerNewsSource(FeedSource):
     name = "hackernews"
 
@@ -53,7 +64,9 @@ class HackerNewsSource(FeedSource):
         if thread is None:
             raise ValueError("no hiring thread found")
         story = http.get(client, ITEM_URL.format(id=thread["objectID"])).json()
-        return [c for c in story.get("children") or [] if "|" in (c.get("text") or "")]
+        return [
+            c for c in story.get("children") or [] if _has_header(c.get("text") or "")
+        ]
 
     def parse(self, item: dict) -> Job:
         raw_html = html.unescape(item["text"])

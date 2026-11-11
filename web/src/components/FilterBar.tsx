@@ -19,11 +19,12 @@ type Props = {
   filters: Filters
   facets: Facets | null
   onChange: (patch: Partial<Filters>) => void
-  onReset: () => void
 }
 
-export function FilterBar({ filters, facets, onChange, onReset }: Props) {
-  const isFiltered = Object.values(filters).some(Boolean)
+export function FilterBar({ filters, facets, onChange }: Props) {
+  const countries = [...(facets?.countries ?? [])].sort((a, b) =>
+    countryName(a.value).localeCompare(countryName(b.value)),
+  )
 
   return (
     <div className="filter-bar">
@@ -42,9 +43,7 @@ export function FilterBar({ filters, facets, onChange, onReset }: Props) {
 
       <select value={filters.country} onChange={(e) => onChange({ country: e.target.value })}>
         <option value="">All countries</option>
-        {[...(facets?.countries ?? [])]
-          .sort((a, b) => countryName(a.value).localeCompare(countryName(b.value)))
-          .map((c) => (
+        {countries.map((c) => (
           <option key={c.value} value={c.value}>
             {countryName(c.value)} ({c.count})
           </option>
@@ -75,10 +74,6 @@ export function FilterBar({ filters, facets, onChange, onReset }: Props) {
         onClick={() => onChange({ savedOnly: !filters.savedOnly })}
       >
         Saved
-      </button>
-
-      <button type="button" className="reset" onClick={onReset} disabled={!isFiltered}>
-        Clear
       </button>
     </div>
   )

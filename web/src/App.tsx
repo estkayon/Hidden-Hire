@@ -12,6 +12,7 @@ import {
 } from './api'
 import { FilterBar } from './components/FilterBar'
 import { Footer } from './components/Footer'
+import { HealthPage } from './components/HealthPage'
 import { JobCard } from './components/JobCard'
 import { JobPage } from './components/JobPage'
 import { Logo } from './components/Logo'
@@ -20,9 +21,14 @@ import { PasteJobModal } from './components/PasteJobModal'
 import { useDebouncedValue } from './hooks'
 import './App.css'
 
-function jobIdFromHash(): string | null {
-  const match = window.location.hash.match(/^#\/job\/(.+)$/)
-  return match ? decodeURIComponent(match[1]) : null
+type Route = { view: 'list' } | { view: 'job'; jobId: string } | { view: 'sources' }
+
+function routeFromHash(): Route {
+  const hash = window.location.hash
+  const job = hash.match(/^#\/job\/(.+)$/)
+  if (job) return { view: 'job', jobId: decodeURIComponent(job[1]) }
+  if (hash === '#/sources') return { view: 'sources' }
+  return { view: 'list' }
 }
 
 export default function App() {
@@ -33,7 +39,7 @@ export default function App() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [openJobId, setOpenJobId] = useState<string | null>(jobIdFromHash)
+  const [route, setRoute] = useState<Route>(routeFromHash)
   const [pasteOpen, setPasteOpen] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
   const listScroll = useRef(0)
@@ -42,6 +48,7 @@ export default function App() {
   const debouncedQuery = useDebouncedValue(filters.q, 300)
   const searchKey = toParams({ ...filters, q: debouncedQuery }).toString()
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const onList = route.view === 'list'
 
   useEffect(() => {
     fetchFacets().then(setFacets).catch(() => setFacets(null))
@@ -68,16 +75,16 @@ export default function App() {
   }, [searchKey, page, reloadKey])
 
   useEffect(() => {
-    const onHashChange = () => setOpenJobId(jobIdFromHash())
+    const onHashChange = () => setRoute(routeFromHash())
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
   useEffect(() => {
-    if (openJobId === null) {
+    if (onList) {
       requestAnimationFrame(() => window.scrollTo({ top: listScroll.current }))
     }
-  }, [openJobId])
+  }, [onList])
 
   function updateFilters(patch: Partial<Filters>) {
     setFilters((prev) => ({ ...prev, ...patch }))
@@ -105,15 +112,13 @@ export default function App() {
     }
   }
 
-  function openJob(jobId: string) {
-    if (openJobId === null) listScroll.current = window.scrollY
-    window.location.hash = `/job/${encodeURIComponent(jobId)}`
+  function navigate(hash: string) {
+    if (onList) listScroll.current = window.scrollY
+    window.location.hash = hash
   }
 
-  function backToList() {
-    window.location.hash = ''
-  }
-
+  const openJob = (jobId: string) => navigate(`/job/${encodeURIComponent(jobId)}`)
+  const backToList = () => navigate('')
   const closePaste = useCallback(() => setPasteOpen(false), [])
 
   return (
@@ -124,30 +129,50 @@ export default function App() {
             <Logo size={34} />
             <span>Hidden Hire</span>
           </button>
-          {openJobId === null ? (
-            <FilterBar
-              filters={filters}
-              facets={facets}
-              onChange={updateFilters}
-              onReset={() => updateFilters(EMPTY_FILTERS)}
-            />
+          {onList ? (
+            <FilterBar filters={filters} facets={facets} onChange={updateFilters} />
           ) : (
-            <>
-              <button type="button" className="nav-back" onClick={backToList}>
-                ← All jobs
-              </button>
-              <div className="nav-spacer" />
-            </>
+            <div className="nav-spacer" />
           )}
+          <button
+            type="button"
+            className={`nav-link${route.view === 'sources' ? ' active' : ''}`}
+            onClick={() => navigate('/sources')}
+          >
+            Sources
+          </button>
           <button type="button" className="nav-action" onClick={() => setPasteOpen(true)}>
             + Paste job
           </button>
         </div>
       </nav>
 
-      {openJobId !== null && <JobPage jobId={openJobId} onToggleSave={toggleSave} />}
+      {!onList && (
+        <div className="subnav">
+          <button type="button" className="back-btn" onClick={backToList}>
+            <span aria-hidden="true">←</span>
+            All jobs
+          </button>
+        </div>
+      )}
 
-      <div className="shell" hidden={openJobId !== null}>
+      {route.view === 'job' && <JobPage jobId={route.jobId} onToggleSave={toggleSave} />}
+      {route.view === 'sources' && <HealthPage />}
+
+      {onList && (
+        <div className="list-tools">
+          <button
+            type="button"
+            className="clear-btn"
+            onClick={() => updateFilters(EMPTY_FILTERS)}
+            disabled={!Object.values(filters).some(Boolean)}
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      <div className="shell" hidden={!onList}>
         <section className="hero">
           <label className="hero-search">
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">

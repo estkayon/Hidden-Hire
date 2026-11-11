@@ -86,6 +86,24 @@ export function fetchJobs(params: URLSearchParams, signal?: AbortSignal): Promis
   return getJson(`/api/jobs?${params}`, signal)
 }
 
+export type SourceStatus = {
+  source: string
+  run_at: string
+  jobs_found: number
+  jobs_kept: number
+  errors: string[]
+  status: 'ok' | 'partial' | 'empty' | 'failing'
+}
+
+export type HealthReport = {
+  last_run_at: string | null
+  sources: SourceStatus[]
+}
+
+export function fetchHealth(): Promise<HealthReport> {
+  return getJson('/api/health')
+}
+
 export function fetchFacets(): Promise<Facets> {
   return getJson('/api/jobs/facets')
 }
