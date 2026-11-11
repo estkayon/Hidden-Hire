@@ -100,6 +100,77 @@ export type HealthReport = {
   sources: SourceStatus[]
 }
 
+export type PersonalInfo = {
+  full_name: string
+  email: string
+  phone: string
+  location: string
+  github: string
+  linkedin: string
+  portfolio: string
+}
+
+export type Profile = {
+  personal: PersonalInfo
+  skills: string[]
+  target_roles: string[]
+  years_experience: number | null
+  cv_file: string | null
+  cv_uploaded_at: string | null
+}
+
+export type ProfileState = {
+  has_cv: boolean
+  profile: Profile | null
+  detected_skills: string[]
+}
+
+export type ProfileUpdate = Pick<Profile, 'personal' | 'skills' | 'target_roles' | 'years_experience'>
+
+async function errorMessage(response: Response): Promise<string> {
+  try {
+    const data = await response.json()
+    if (typeof data.detail === 'string') return data.detail
+    if (Array.isArray(data.detail)) {
+      const fields = data.detail.map((d: { loc?: string[] }) => d.loc?.[d.loc.length - 1]).filter(Boolean)
+      return `Please check: ${fields.join(', ')}`
+    }
+  } catch {
+    // fall through to the generic message
+  }
+  return `API error ${response.status}`
+}
+
+async function sendJson<T>(url: string, method: string, body?: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!response.ok) throw new Error(await errorMessage(response))
+  return response.json()
+}
+
+export function fetchProfile(): Promise<ProfileState> {
+  return getJson('/api/profile')
+}
+
+export async function uploadCv(file: File): Promise<ProfileState> {
+  const form = new FormData()
+  form.append('file', file)
+  const response = await fetch('/api/profile/cv', { method: 'POST', body: form })
+  if (!response.ok) throw new Error(await errorMessage(response))
+  return response.json()
+}
+
+export function updateProfile(body: ProfileUpdate): Promise<ProfileState> {
+  return sendJson('/api/profile', 'PUT', body)
+}
+
+export function deleteCv(): Promise<ProfileState> {
+  return sendJson('/api/profile/cv', 'DELETE')
+}
+
 export function fetchHealth(): Promise<HealthReport> {
   return getJson('/api/health')
 }
