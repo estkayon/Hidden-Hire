@@ -110,7 +110,7 @@ eligibility_blockers:
 seniority_levels:
   Intern: [intern, internship, trainee, working student, werkstudent]
   Junior: [junior, jr, entry level, entry-level, graduate, associate, fresher]
-  Mid-level: [mid, mid level, mid-level, intermediate]
+  Mid-level: [mid, mid level, mid-level, intermediate, medium, regular]
   Senior: [senior, sr, lead, staff, principal]
 
 # Roles clearly above intern/junior/mid level are dropped.
