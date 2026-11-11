@@ -27,6 +27,7 @@ from fetcher.sources.recruitee import RecruiteeSource
 from fetcher.sources.reed import ReedSource
 from fetcher.sources.remoteok import RemoteOKSource
 from fetcher.sources.remotive import RemotiveSource
+from fetcher.sources.seek import SeekSource
 from fetcher.sources.smartrecruiters import SmartRecruitersSource
 from fetcher.sources.weworkremotely import WeWorkRemotelySource
 from fetcher.sources.workable import WorkableSource
@@ -56,6 +57,7 @@ def build_sources() -> list[Source]:
         MyCareersFutureSource(),
         ReedSource(os.environ.get("REED_API_KEY")),
         HackerNewsSource(),
+        SeekSource(),
     ]
 
 
