@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app import profile as store
-from app.profile import MAX_CV_BYTES, Profile
+from app.profile import MAX_CV_BYTES, PersonalInfo, Profile
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
@@ -17,7 +17,20 @@ class ProfileState(BaseModel):
     detected_skills: list[str]
 
 
+class PersonalUpdate(BaseModel):
+    full_name: str = Field(default="", max_length=120)
+    email: str = Field(
+        default="", max_length=200, pattern=r"^$|^[\w.+-]+@[\w-]+(\.[\w-]+)+$"
+    )
+    phone: str = Field(default="", max_length=40)
+    location: str = Field(default="", max_length=120)
+    github: str = Field(default="", max_length=300, pattern=r"^$|^https?://")
+    linkedin: str = Field(default="", max_length=300, pattern=r"^$|^https?://")
+    portfolio: str = Field(default="", max_length=300, pattern=r"^$|^https?://")
+
+
 class ProfileUpdate(BaseModel):
+    personal: PersonalUpdate = Field(default_factory=PersonalUpdate)
     skills: list[str] = Field(default_factory=list, max_length=150)
     target_roles: list[str] = Field(default_factory=list, max_length=20)
     years_experience: float | None = Field(default=None, ge=0, le=60)
@@ -67,6 +80,9 @@ def update_profile(body: ProfileUpdate) -> ProfileState:
     store.save_profile(
         current.model_copy(
             update={
+                "personal": PersonalInfo(
+                    **{k: v.strip() for k, v in body.personal.model_dump().items()}
+                ),
                 "skills": _clean(body.skills),
                 "target_roles": _clean(body.target_roles, max_len=80),
                 "years_experience": body.years_experience,

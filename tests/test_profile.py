@@ -22,6 +22,32 @@ def test_detect_skills_whole_words_only():
     assert "Go" not in found
 
 
+def test_extract_personal_from_cv_text():
+    text = (
+        "Jane Rahman\n"
+        "Dhaka | jane.r@example.com | +880 1712-345678\n"
+        "github.com/janer | linkedin.com/in/jane-r | https://janer.dev\n"
+        "Education 2022-2026\n"
+    )
+    info = store.extract_personal(text)
+    assert info.full_name == "Jane Rahman"
+    assert info.email == "jane.r@example.com"
+    assert info.phone == "+880 1712-345678"
+    assert info.github == "https://github.com/janer"
+    assert info.linkedin == "https://linkedin.com/in/jane-r"
+    assert info.portfolio == "https://janer.dev"
+    assert info.location == ""
+
+
+def test_merge_keeps_owner_edits():
+    current = store.PersonalInfo(full_name="Jane R.", location="Dhaka")
+    found = store.PersonalInfo(full_name="Jane Rahman", email="j@example.com")
+    merged = store.merge_personal(current, found)
+    assert merged.full_name == "Jane R."
+    assert merged.email == "j@example.com"
+    assert merged.location == "Dhaka"
+
+
 def test_extract_rejects_non_pdf():
     with pytest.raises(ValueError):
         store.extract_pdf_text(b"hello")
