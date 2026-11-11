@@ -23,6 +23,14 @@ workable:
 recruitee:
   bunq: bunq
 
+# Subdomain of <slug>.jobs.personio.de
+personio:
+  westwing: Westwing
+
+# Career site host (teamtailor.com subdomain or the company's own domain)
+teamtailor:
+  career.teamtailor.com: Teamtailor
+
 # Identifiers are case-sensitive.
 smartrecruiters:
   BoschGroup: Bosch

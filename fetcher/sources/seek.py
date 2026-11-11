@@ -1,4 +1,4 @@
-"""SEEK (AU, NZ) and JobStreet (MY, PH) job search via the site's own public JSON endpoint.
+"""SEEK (AU, NZ), JobStreet (MY, PH, SG) and JobsDB (TH) via the site's own public JSON endpoint.
 
 Undocumented endpoint: it may change without notice. Runs only twice a day to stay polite.
 """
@@ -25,6 +25,7 @@ SITES = {
     "MY-Main": "https://my.jobstreet.com",
     "PH-Main": "https://ph.jobstreet.com",
     "SG-Main": "https://sg.jobstreet.com",
+    "TH-Main": "https://th.jobsdb.com",
 }
 SEARCH_PATH = "/api/jobsearch/v5/search"
 RUN_EVERY_HOURS = 12  # with a 3-hour schedule this gives 2 runs a day
