@@ -1,5 +1,6 @@
 """Normalization of raw job data: plain text, country, city, work type, remote scope."""
 
+import html
 import re
 from functools import cache
 from html.parser import HTMLParser
@@ -12,21 +13,8 @@ from fetcher.models import Job, RemoteScope, WorkType
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
-BLOCK_TAGS = {
-    "p",
-    "div",
-    "br",
-    "li",
-    "ul",
-    "ol",
-    "tr",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-}
+BLOCK_TAGS = {"p", "div", "br", "ul", "ol", "tr"}
+HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
 SKIP_TAGS = {"script", "style"}
 
 LOCATION_SPLIT = re.compile(r"[;|/]")
@@ -45,13 +33,17 @@ class _TextExtractor(HTMLParser):
     def handle_starttag(self, tag: str, attrs: list) -> None:
         if tag in SKIP_TAGS:
             self._skip_depth += 1
+        elif tag == "li":
+            self.parts.append("\n• ")
+        elif tag in HEADING_TAGS:
+            self.parts.append("\n## ")
         elif tag in BLOCK_TAGS:
             self.parts.append("\n")
 
     def handle_endtag(self, tag: str) -> None:
         if tag in SKIP_TAGS:
             self._skip_depth = max(0, self._skip_depth - 1)
-        elif tag in BLOCK_TAGS:
+        elif tag == "li" or tag in HEADING_TAGS or tag in BLOCK_TAGS:
             self.parts.append("\n")
 
     def handle_data(self, data: str) -> None:
@@ -60,14 +52,16 @@ class _TextExtractor(HTMLParser):
 
 
 def html_to_text(raw: str) -> str:
-    """Convert HTML to plain text, keeping paragraph breaks."""
+    """HTML to plain text. Headings become '## ' lines and list items '• ' lines."""
     if not raw:
         return ""
+    if "&lt;" in raw and "<" not in raw:
+        raw = html.unescape(raw)  # some feeds escape their HTML twice
     parser = _TextExtractor()
     parser.feed(raw)
     parser.close()
     lines = (" ".join(line.split()) for line in "".join(parser.parts).splitlines())
-    return "\n".join(line for line in lines if line)
+    return "\n".join(line for line in lines if line and line not in ("•", "##"))
 
 
 @cache

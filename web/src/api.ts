@@ -25,6 +25,22 @@ export type JobList = {
   jobs: Job[]
 }
 
+export type JobDetail = Job & {
+  description: string
+  source_url: string | null
+  apply_url: string | null
+  apply_email: string | null
+  tags: string[]
+}
+
+export type PasteInput = {
+  title: string
+  company: string
+  location: string
+  url: string
+  text: string
+}
+
 export type Facet = { value: string; count: number }
 export type Facets = { countries: Facet[]; sources: Facet[] }
 
@@ -45,7 +61,7 @@ export const EMPTY_FILTERS: Filters = {
   source: '',
   savedOnly: false,
 }
-export const PAGE_SIZE = 48
+export const PAGE_SIZE = 30
 
 export function toParams(filters: Filters): URLSearchParams {
   const params = new URLSearchParams({ limit: String(PAGE_SIZE) })
@@ -72,6 +88,25 @@ export function fetchJobs(params: URLSearchParams, signal?: AbortSignal): Promis
 
 export function fetchFacets(): Promise<Facets> {
   return getJson('/api/jobs/facets')
+}
+
+export function fetchJob(jobId: string, signal?: AbortSignal): Promise<JobDetail> {
+  return getJson(`/api/jobs/${encodeURIComponent(jobId)}`, signal)
+}
+
+export async function pasteJob(input: PasteInput): Promise<JobDetail> {
+  const response = await fetch('/api/jobs/paste', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...input, url: input.url.trim() || null }),
+  })
+  if (response.status === 422) {
+    throw new Error('Check the fields: job text needs at least 20 characters and the URL must start with http.')
+  }
+  if (!response.ok) {
+    throw new Error(`API error ${response.status}`)
+  }
+  return response.json()
 }
 
 export async function setSaved(jobId: string, saved: boolean): Promise<void> {

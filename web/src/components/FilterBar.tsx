@@ -42,7 +42,9 @@ export function FilterBar({ filters, facets, onChange, onReset }: Props) {
 
       <select value={filters.country} onChange={(e) => onChange({ country: e.target.value })}>
         <option value="">All countries</option>
-        {facets?.countries.map((c) => (
+        {[...(facets?.countries ?? [])]
+          .sort((a, b) => countryName(a.value).localeCompare(countryName(b.value)))
+          .map((c) => (
           <option key={c.value} value={c.value}>
             {countryName(c.value)} ({c.count})
           </option>

@@ -14,12 +14,13 @@ from app.models import Application, Job
 from app.sync import naive_utc, to_row
 from fetcher.models import Job as JobRecord
 from fetcher.models import make_job_id
-from fetcher.normalize import country_tier, normalize_job
+from fetcher.normalize import country_tier, html_to_text, normalize_job
 
 NEW_HOURS = 48
 MAIN_VIEW_DAYS = 7
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+\w")
 URL = re.compile(r"https?://[^\s<>\"')\]]+")
+HTML_TAG = re.compile(r"</?[a-z][^>]*>", re.IGNORECASE)
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -90,6 +91,10 @@ def _to_model[T: JobSummary](job: Job, model: type[T], now: datetime, saved: boo
     data["is_new"] = now - seen_at <= timedelta(hours=NEW_HOURS)
     data["country_tier"] = country_tier(job.country)
     data["saved"] = saved
+    if HTML_TAG.search(data.get("description") or ""):
+        data["description"] = html_to_text(
+            data["description"]
+        )  # older imports kept raw HTML
     return model(**data)
 
 

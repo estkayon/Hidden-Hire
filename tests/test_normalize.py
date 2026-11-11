@@ -11,9 +11,13 @@ from fetcher.normalize import (
 )
 
 
-def test_html_to_text_keeps_paragraphs_and_drops_tags():
-    raw = "<p>Hello <b>world</b></p><script>alert(1)</script><ul><li>Python</li></ul>"
-    assert html_to_text(raw) == "Hello world\nPython"
+def test_html_to_text_keeps_structure_and_drops_tags():
+    raw = "<h2>About</h2><p>Hello <b>world</b></p><script>alert(1)</script><ul><li>Python</li></ul>"
+    assert html_to_text(raw) == "## About\nHello world\n• Python"
+
+
+def test_html_to_text_handles_double_escaped_html():
+    assert html_to_text("&lt;p&gt;Hi &amp;amp; bye&lt;/p&gt;") == "Hi & bye"
 
 
 @pytest.mark.parametrize(
