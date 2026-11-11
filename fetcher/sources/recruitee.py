@@ -6,7 +6,7 @@ import httpx
 
 from fetcher import http
 from fetcher.models import Job, make_job_id
-from fetcher.normalize import html_to_text
+from fetcher.normalize import detect_seniority, html_to_text
 from fetcher.sources.base import BoardSource
 
 API_URL = "https://{token}.recruitee.com/api/offers/"
@@ -93,5 +93,6 @@ class RecruiteeSource(BoardSource):
             apply_url=item.get("careers_apply_url") or item.get("careers_url"),
             posted_at=_parse_time(item.get("published_at") or item.get("created_at")),
             deadline=close_at.date() if close_at else None,
+            seniority=detect_seniority(item.get("experience_code") or ""),
             **_salary(item),
         )

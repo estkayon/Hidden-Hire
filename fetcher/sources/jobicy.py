@@ -7,7 +7,7 @@ import httpx
 from fetcher import http
 from fetcher.filters import RETENTION_DAYS
 from fetcher.models import Job, make_job_id
-from fetcher.normalize import html_to_text
+from fetcher.normalize import detect_seniority, html_to_text
 from fetcher.sources.base import FeedSource
 
 API_URL = "https://jobicy.com/api/v2/remote-jobs"
@@ -73,5 +73,6 @@ class JobicySource(FeedSource):
             work_type="remote",
             apply_url=url,
             posted_at=item.get("pubDate"),
+            seniority=detect_seniority(item.get("jobLevel") or ""),
             **_salary(item),
         )

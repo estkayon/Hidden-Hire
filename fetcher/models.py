@@ -51,6 +51,7 @@ class Job(BaseModel):
     deadline: date | None = None
     fetched_at: datetime = Field(default_factory=utc_now)
 
+    seniority: str | None = None  # only when the posting states it
     tags: list[str] = Field(default_factory=list)
     also_seen: list[str] = Field(
         default_factory=list

@@ -106,6 +106,13 @@ eligibility_blockers:
   - eu work permit required
   - valid work permit required
 
+# Level shown on the card, only when the posting states it. First match wins.
+seniority_levels:
+  Intern: [intern, internship, trainee, working student, werkstudent]
+  Junior: [junior, jr, entry level, entry-level, graduate, associate, fresher]
+  Mid-level: [mid, mid level, mid-level, intermediate]
+  Senior: [senior, sr, lead, staff, principal]
+
 # Roles clearly above intern/junior/mid level are dropped.
 senior_titles:
   - senior

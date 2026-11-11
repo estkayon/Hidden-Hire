@@ -7,7 +7,7 @@ import httpx
 from fetcher import http
 from fetcher.filters import RETENTION_DAYS, is_tech, is_too_senior
 from fetcher.models import Job, make_job_id
-from fetcher.normalize import html_to_text
+from fetcher.normalize import detect_seniority, html_to_text
 from fetcher.sources.base import BoardSource
 
 API_URL = "https://api.smartrecruiters.com/v1/companies/{token}/postings"
@@ -83,4 +83,7 @@ class SmartRecruitersSource(BoardSource):
             work_type=_work_type(location),
             apply_url=item.get("applyUrl") or item.get("postingUrl"),
             posted_at=item.get("releasedDate"),
+            seniority=detect_seniority(
+                (item.get("experienceLevel") or {}).get("label") or ""
+            ),
         )

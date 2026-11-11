@@ -43,6 +43,7 @@ class Job(Base):
     fetched_at: Mapped[datetime] = mapped_column(DateTime)
     imported_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
+    seniority: Mapped[str | None] = mapped_column(String)
     tags: Mapped[list] = mapped_column(JSON, default=list)
     also_seen: Mapped[list] = mapped_column(JSON, default=list)
 

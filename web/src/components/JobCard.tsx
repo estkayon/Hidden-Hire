@@ -39,6 +39,7 @@ export function JobCard({ job }: { job: Job }) {
       <ul className="card-meta">
         <li>{place}</li>
         <li>{WORK_TYPE_LABEL[job.work_type] ?? job.work_type}</li>
+        {job.seniority && <li>{job.seniority}</li>}
         {job.posted_at && (
           <li>
             {new Date(job.posted_at).toLocaleDateString()} · {timeAgo(job.posted_at)}

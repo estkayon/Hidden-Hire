@@ -4,6 +4,7 @@ from fetcher.models import Job
 from fetcher.normalize import (
     detect_location,
     detect_remote_scope,
+    detect_seniority,
     detect_work_type,
     html_to_text,
     normalize_job,
@@ -55,6 +56,21 @@ def test_detect_work_type(text, expected):
 )
 def test_detect_remote_scope(location, country, expected):
     assert detect_remote_scope(location, country) == expected
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Junior Backend Developer", "Junior"),
+        ("Graduate Data Engineer", "Junior"),
+        ("Data Analyst Intern", "Intern"),
+        ("mid_level", "Mid-level"),
+        ("Entry-Level, Junior", "Junior"),
+        ("Machine Learning Engineer", None),
+    ],
+)
+def test_detect_seniority(text, expected):
+    assert detect_seniority(text) == expected
 
 
 def test_normalize_job_keeps_source_values():

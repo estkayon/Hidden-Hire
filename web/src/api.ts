@@ -8,6 +8,7 @@ export type Job = {
   work_type: string
   remote_scope: string
   source: string
+  seniority: string | null
   also_seen: string[]
   posted_at: string | null
   deadline: string | null

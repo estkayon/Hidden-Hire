@@ -35,6 +35,7 @@ class JobSummary(BaseModel):
     work_type: str
     remote_scope: str
     source: str
+    seniority: str | None
     also_seen: list[str]
     posted_at: datetime | None
     deadline: date | None

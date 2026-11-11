@@ -7,7 +7,7 @@ import httpx
 from fetcher import http
 from fetcher.filters import RETENTION_DAYS
 from fetcher.models import Job, make_job_id
-from fetcher.normalize import html_to_text
+from fetcher.normalize import detect_seniority, html_to_text
 from fetcher.sources.base import FeedSource
 
 API_URL = "https://himalayas.app/jobs/api"
@@ -69,5 +69,6 @@ class HimalayasSource(FeedSource):
             work_type="remote",
             apply_url=item.get("applicationLink") or url,
             posted_at=datetime.fromtimestamp(published, UTC) if published else None,
+            seniority=detect_seniority(item.get("seniority") or ""),
             **_salary(item),
         )

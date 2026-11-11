@@ -18,6 +18,7 @@ from app.models import Application, Job, SourceRun
 from fetcher.dedup import clean_company, is_same_job
 from fetcher.filters import RETENTION_DAYS, is_fresh
 from fetcher.models import Job as JobRecord
+from fetcher.normalize import normalize_job
 
 REPO_DIR = Path(__file__).resolve().parent.parent / "data" / "repo"
 GIT_TIMEOUT = 120
@@ -80,7 +81,7 @@ def import_jobs(session: Session, records: Iterator[JobRecord], now: datetime) -
             if entry not in twin.also_seen:
                 twin.also_seen = [*twin.also_seen, entry]
             continue
-        row = to_row(record)
+        row = to_row(normalize_job(record))
         session.add(row)
         by_company.setdefault(key, []).append(row)
         added += 1
