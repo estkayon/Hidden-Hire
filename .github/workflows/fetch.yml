@@ -27,10 +27,30 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Check out data repo
+        uses: actions/checkout@v4
+        with:
+          repository: estkayon/hidden-hire-data
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: data-repo
+
       - name: Run fetcher
         env:
           REED_API_KEY: ${{ secrets.REED_API_KEY }}
-        run: python -m fetcher.run --out data
+        run: python -m fetcher.run --out data-repo
 
       - name: Show health report
-        run: cat data/health/latest.json
+        run: cat data-repo/health/latest.json
+
+      - name: Push new data
+        working-directory: data-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No new data"
+          else
+            git commit -m "data: fetch $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          fi
