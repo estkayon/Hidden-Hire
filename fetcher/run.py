@@ -23,6 +23,7 @@ from fetcher.sources.dhakacareers import DhakaCareersSource
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.hackernews import HackerNewsSource
 from fetcher.sources.himalayas import HimalayasSource
+from fetcher.sources.japandev import JapanDevSource
 from fetcher.sources.jobicy import JobicySource
 from fetcher.sources.lever import LeverSource
 from fetcher.sources.mycareersfuture import MyCareersFutureSource
@@ -70,6 +71,7 @@ def build_sources() -> list[Source]:
         BDTechJobsSource(),
         DhakaCareersSource(),
         BulldogjobSource(),
+        JapanDevSource(),
     ]
 
 
