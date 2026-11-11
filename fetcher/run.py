@@ -17,6 +17,8 @@ from fetcher.sources.arbeitnow import ArbeitnowSource
 from fetcher.sources.arbeitsagentur import ArbeitsagenturSource
 from fetcher.sources.ashby import AshbySource
 from fetcher.sources.base import FetchResult, Source, describe_error
+from fetcher.sources.bdtechjobs import BDTechJobsSource
+from fetcher.sources.dhakacareers import DhakaCareersSource
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.hackernews import HackerNewsSource
 from fetcher.sources.himalayas import HimalayasSource
@@ -25,6 +27,7 @@ from fetcher.sources.lever import LeverSource
 from fetcher.sources.mycareersfuture import MyCareersFutureSource
 from fetcher.sources.recruitee import RecruiteeSource
 from fetcher.sources.reed import ReedSource
+from fetcher.sources.remoteintegrity import RemoteIntegritySource
 from fetcher.sources.remoteok import RemoteOKSource
 from fetcher.sources.remotive import RemotiveSource
 from fetcher.sources.seek import SeekSource
@@ -58,6 +61,9 @@ def build_sources() -> list[Source]:
         ReedSource(os.environ.get("REED_API_KEY")),
         HackerNewsSource(),
         SeekSource(),
+        RemoteIntegritySource(),
+        BDTechJobsSource(),
+        DhakaCareersSource(),
     ]
 
 

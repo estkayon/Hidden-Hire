@@ -69,6 +69,6 @@ class HimalayasSource(FeedSource):
             work_type="remote",
             apply_url=item.get("applicationLink") or url,
             posted_at=datetime.fromtimestamp(published, UTC) if published else None,
-            seniority=detect_seniority(item.get("seniority") or ""),
+            seniority=detect_seniority(item.get("seniority")),
             **_salary(item),
         )

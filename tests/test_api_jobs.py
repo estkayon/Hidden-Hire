@@ -98,6 +98,17 @@ def test_paste_rejects_non_http_url(client):
     assert response.status_code == 422
 
 
+def test_save_and_unsave(client):
+    assert client.post("/api/saved/old").json()["saved"] is True
+    saved = client.get("/api/jobs", params={"saved": "true"}).json()
+    assert [j["id"] for j in saved["jobs"]] == ["old"]
+    assert saved["jobs"][0]["saved"] is True
+
+    assert client.delete("/api/saved/old").json()["saved"] is False
+    assert client.get("/api/jobs", params={"saved": "true"}).json()["total"] == 0
+    assert client.post("/api/saved/missing").status_code == 404
+
+
 def test_job_detail_and_404(client):
     assert client.get("/api/jobs/new").json()["title"] == "ML Engineer"
     assert client.get("/api/jobs/missing").status_code == 404

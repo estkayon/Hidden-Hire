@@ -159,8 +159,9 @@ def detect_remote_scope(location_raw: str, country: str | None) -> RemoteScope:
     return "country" if country else "unknown"
 
 
-def detect_seniority(text: str) -> str | None:
+def detect_seniority(value: str | list[str] | None) -> str | None:
     """Level stated in a title or a source's level field, e.g. 'mid_level' -> 'Mid-level'."""
+    text = ", ".join(map(str, value)) if isinstance(value, list) else (value or "")
     text = text.replace("_", " ")
     for level, words in load_config("keywords.yaml")["seniority_levels"].items():
         if has_any(text, words):

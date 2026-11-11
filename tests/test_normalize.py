@@ -66,6 +66,7 @@ def test_detect_remote_scope(location, country, expected):
         ("Data Analyst Intern", "Intern"),
         ("mid_level", "Mid-level"),
         ("Entry-Level, Junior", "Junior"),
+        (["Mid-level"], "Mid-level"),
         ("Machine Learning Engineer", None),
     ],
 )

@@ -10,7 +10,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Job
+from app.models import Application, Job
 from app.sync import naive_utc, to_row
 from fetcher.models import Job as JobRecord
 from fetcher.models import make_job_id
@@ -45,6 +45,7 @@ class JobSummary(BaseModel):
     salary_period: str | None
     is_new: bool
     country_tier: int
+    saved: bool
 
 
 class JobDetail(JobSummary):
@@ -60,6 +61,16 @@ class JobList(BaseModel):
     jobs: list[JobSummary]
 
 
+class Facet(BaseModel):
+    value: str
+    count: int
+
+
+class Facets(BaseModel):
+    countries: list[Facet]
+    sources: list[Facet]
+
+
 class PasteJob(BaseModel):
     """A job posting pasted by the owner (Facebook post, email, message)."""
 
@@ -70,7 +81,7 @@ class PasteJob(BaseModel):
     url: str | None = Field(default=None, max_length=2_000, pattern=r"^https?://")
 
 
-def _to_model[T: JobSummary](job: Job, model: type[T], now: datetime) -> T:
+def _to_model[T: JobSummary](job: Job, model: type[T], now: datetime, saved: bool) -> T:
     seen_at = (job.posted_at or job.fetched_at).replace(tzinfo=UTC)
     data = {
         name: getattr(job, name) for name in model.model_fields if hasattr(job, name)
@@ -78,6 +89,7 @@ def _to_model[T: JobSummary](job: Job, model: type[T], now: datetime) -> T:
     data["posted_at"] = job.posted_at.replace(tzinfo=UTC) if job.posted_at else None
     data["is_new"] = now - seen_at <= timedelta(hours=NEW_HOURS)
     data["country_tier"] = country_tier(job.country)
+    data["saved"] = saved
     return model(**data)
 
 
@@ -89,13 +101,17 @@ def list_jobs(
     work_type: Annotated[list[str] | None, Query()] = None,
     source: Annotated[list[str] | None, Query()] = None,
     posted_within_hours: Annotated[int | None, Query(ge=1, le=240)] = None,
+    saved: bool = False,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> JobList:
-    """Newest first. Without a search query, only the last 7 days are shown."""
+    """Newest first. Without a search query or the saved filter, only the last 7 days are shown."""
     now = datetime.now(UTC)
     seen_at = func.coalesce(Job.posted_at, Job.fetched_at)
     stmt = select(Job)
+
+    if saved:
+        stmt = stmt.where(Job.id.in_(select(Application.job_id)))
 
     if q:
         stmt = stmt.where(
@@ -109,7 +125,7 @@ def list_jobs(
         stmt = stmt.where(
             seen_at >= naive_utc(now - timedelta(hours=posted_within_hours))
         )
-    elif not q:
+    elif not q and not saved:
         stmt = stmt.where(seen_at >= naive_utc(now - timedelta(days=MAIN_VIEW_DAYS)))
     if country:
         stmt = stmt.where(Job.country.in_([c.upper() for c in country]))
@@ -119,8 +135,36 @@ def list_jobs(
         stmt = stmt.where(Job.source.in_(source))
 
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-    rows = session.scalars(stmt.order_by(seen_at.desc()).limit(limit).offset(offset))
-    return JobList(total=total, jobs=[_to_model(job, JobSummary, now) for job in rows])
+    rows = list(
+        session.scalars(stmt.order_by(seen_at.desc()).limit(limit).offset(offset))
+    )
+    saved_ids = set(
+        session.scalars(
+            select(Application.job_id).where(
+                Application.job_id.in_([j.id for j in rows])
+            )
+        )
+    )
+    return JobList(
+        total=total,
+        jobs=[_to_model(job, JobSummary, now, job.id in saved_ids) for job in rows],
+    )
+
+
+@router.get("/facets", response_model=Facets)
+def get_facets(session: SessionDep) -> Facets:
+    """Countries and sources present in the database, for filter menus."""
+
+    def counts(column) -> list[Facet]:
+        rows = session.execute(
+            select(column, func.count())
+            .where(column.is_not(None))
+            .group_by(column)
+            .order_by(func.count().desc())
+        )
+        return [Facet(value=value, count=count) for value, count in rows]
+
+    return Facets(countries=counts(Job.country), sources=counts(Job.source))
 
 
 @router.post("/paste", response_model=JobDetail, status_code=201)
@@ -130,7 +174,9 @@ def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
     job_id = make_job_id("paste", body.text)
     existing = session.get(Job, job_id)
     if existing is not None:
-        return _to_model(existing, JobDetail, now)
+        return _to_model(
+            existing, JobDetail, now, session.get(Application, job_id) is not None
+        )
 
     email = EMAIL.search(body.text)
     link = URL.search(body.text)
@@ -151,7 +197,7 @@ def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
     row = to_row(record)
     session.add(row)
     session.commit()
-    return _to_model(row, JobDetail, now)
+    return _to_model(row, JobDetail, now, saved=False)
 
 
 @router.get("/{job_id}", response_model=JobDetail)
@@ -159,4 +205,6 @@ def get_job(job_id: str, session: SessionDep) -> JobDetail:
     job = session.get(Job, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    return _to_model(job, JobDetail, datetime.now(UTC))
+    return _to_model(
+        job, JobDetail, datetime.now(UTC), session.get(Application, job_id) is not None
+    )
