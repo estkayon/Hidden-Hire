@@ -1,20 +1,25 @@
-"""Job list, search and detail endpoints."""
+"""Job list, search, detail and paste endpoints."""
 
+import re
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.models import Job
-from app.sync import naive_utc
-from fetcher.normalize import country_tier
+from app.sync import naive_utc, to_row
+from fetcher.models import Job as JobRecord
+from fetcher.models import make_job_id
+from fetcher.normalize import country_tier, normalize_job
 
 NEW_HOURS = 48
 MAIN_VIEW_DAYS = 7
+EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+\w")
+URL = re.compile(r"https?://[^\s<>\"')\]]+")
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -52,6 +57,16 @@ class JobDetail(JobSummary):
 class JobList(BaseModel):
     total: int
     jobs: list[JobSummary]
+
+
+class PasteJob(BaseModel):
+    """A job posting pasted by the owner (Facebook post, email, message)."""
+
+    title: str = Field(min_length=1, max_length=200)
+    company: str = Field(min_length=1, max_length=200)
+    text: str = Field(min_length=20, max_length=20_000)
+    location: str = Field(default="", max_length=200)
+    url: str | None = Field(default=None, max_length=2_000, pattern=r"^https?://")
 
 
 def _to_model[T: JobSummary](job: Job, model: type[T], now: datetime) -> T:
@@ -105,6 +120,37 @@ def list_jobs(
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = session.scalars(stmt.order_by(seen_at.desc()).limit(limit).offset(offset))
     return JobList(total=total, jobs=[_to_model(job, JobSummary, now) for job in rows])
+
+
+@router.post("/paste", response_model=JobDetail, status_code=201)
+def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
+    """Save a pasted job. Pasting the same text again returns the saved job."""
+    now = datetime.now(UTC)
+    job_id = make_job_id("paste", body.text)
+    existing = session.get(Job, job_id)
+    if existing is not None:
+        return _to_model(existing, JobDetail, now)
+
+    email = EMAIL.search(body.text)
+    link = URL.search(body.text)
+    record = normalize_job(
+        JobRecord(
+            id=job_id,
+            source="paste",
+            title=body.title,
+            company=body.company,
+            description=body.text.strip(),
+            location_raw=body.location,
+            apply_url=body.url or (link.group(0).rstrip(".,;:!?") if link else None),
+            apply_email=email.group(0) if email else None,
+            posted_at=now,
+            fetched_at=now,
+        )
+    )
+    row = to_row(record)
+    session.add(row)
+    session.commit()
+    return _to_model(row, JobDetail, now)
 
 
 @router.get("/{job_id}", response_model=JobDetail)

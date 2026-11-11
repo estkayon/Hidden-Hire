@@ -52,7 +52,7 @@ def read_records(repo_dir: Path) -> Iterator[JobRecord]:
                     log.warning("skipped invalid line in %s", path.name)
 
 
-def _to_row(record: JobRecord) -> Job:
+def to_row(record: JobRecord) -> Job:
     data = record.model_dump()
     data["posted_at"] = naive_utc(record.posted_at)
     data["fetched_at"] = naive_utc(record.fetched_at)
@@ -80,7 +80,7 @@ def import_jobs(session: Session, records: Iterator[JobRecord], now: datetime) -
             if entry not in twin.also_seen:
                 twin.also_seen = [*twin.also_seen, entry]
             continue
-        row = _to_row(record)
+        row = to_row(record)
         session.add(row)
         by_company.setdefault(key, []).append(row)
         added += 1

@@ -66,6 +66,38 @@ def test_country_filter(client):
     assert [j["id"] for j in data["jobs"]] == ["week"]
 
 
+PASTE = {
+    "title": "Junior ML Engineer",
+    "company": "Acme",
+    "location": "Remote, Malaysia",
+    "text": "We are hiring a Junior ML Engineer. Send your CV to jobs@acme.com or apply at https://acme.com/careers/ml.",
+}
+
+
+def test_paste_extracts_email_and_link(client):
+    response = client.post("/api/jobs/paste", json=PASTE)
+    assert response.status_code == 201
+    job = response.json()
+    assert job["source"] == "paste"
+    assert job["apply_email"] == "jobs@acme.com"
+    assert job["apply_url"] == "https://acme.com/careers/ml"
+    assert job["country"] == "MY"
+    assert job["work_type"] == "remote"
+
+
+def test_paste_same_text_twice_returns_same_job(client):
+    first = client.post("/api/jobs/paste", json=PASTE).json()
+    second = client.post("/api/jobs/paste", json=PASTE).json()
+    assert first["id"] == second["id"]
+
+
+def test_paste_rejects_non_http_url(client):
+    response = client.post(
+        "/api/jobs/paste", json={**PASTE, "url": "javascript:alert(1)"}
+    )
+    assert response.status_code == 422
+
+
 def test_job_detail_and_404(client):
     assert client.get("/api/jobs/new").json()["title"] == "ML Engineer"
     assert client.get("/api/jobs/missing").status_code == 404
