@@ -1,0 +1,96 @@
+# Skills detected in the CV text (whole-word, case-insensitive).
+# Single-letter or common-word names (C, R, Go) are left out to avoid false matches;
+# add them by hand on the Profile page if they apply.
+skills:
+  # Languages
+  - name: Python
+  - name: Java
+  - name: JavaScript
+    aliases: [js]
+  - name: TypeScript
+  - name: C++
+  - name: C#
+  - name: Golang
+  - name: Rust
+  - name: SQL
+  - name: PHP
+  - name: Bash
+  # Web
+  - name: HTML
+  - name: CSS
+  - name: Tailwind CSS
+    aliases: [tailwind]
+  - name: React
+    aliases: [react.js, reactjs]
+  - name: Next.js
+    aliases: [nextjs]
+  - name: Vue
+    aliases: [vue.js]
+  - name: Node.js
+    aliases: [nodejs, node]
+  - name: Express
+    aliases: [express.js]
+  - name: Django
+  - name: Flask
+  - name: FastAPI
+  - name: Laravel
+  - name: REST API
+    aliases: [rest apis, restful]
+  - name: GraphQL
+  # ML and data
+  - name: Machine Learning
+  - name: Deep Learning
+  - name: NLP
+    aliases: [natural language processing]
+  - name: Computer Vision
+  - name: LLM
+    aliases: [llms, large language models]
+  - name: RAG
+    aliases: [retrieval-augmented generation, retrieval augmented generation]
+  - name: PyTorch
+  - name: TensorFlow
+  - name: Keras
+  - name: scikit-learn
+    aliases: [sklearn]
+  - name: Hugging Face
+    aliases: [huggingface, transformers]
+  - name: LangChain
+  - name: OpenCV
+  - name: Pandas
+  - name: NumPy
+  - name: Matplotlib
+  - name: XGBoost
+  - name: FAISS
+  - name: Streamlit
+  - name: Jupyter
+  - name: Spark
+    aliases: [pyspark]
+  - name: Power BI
+  - name: Tableau
+  - name: Excel
+  # MLOps and infrastructure
+  - name: MLOps
+  - name: MLflow
+  - name: DVC
+  - name: Airflow
+  - name: Docker
+  - name: Kubernetes
+    aliases: [k8s]
+  - name: CI/CD
+  - name: GitHub Actions
+  - name: Git
+  - name: Linux
+  - name: AWS
+  - name: GCP
+    aliases: [google cloud]
+  - name: Azure
+  - name: Terraform
+  - name: Prometheus
+  - name: Grafana
+  # Databases
+  - name: PostgreSQL
+    aliases: [postgres]
+  - name: MySQL
+  - name: MongoDB
+  - name: Redis
+  - name: SQLite

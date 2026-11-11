@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from app.api import health, jobs, tracker
+from app.api import health, jobs, profile, tracker
 from app.db import init_db
 
 HOST = "127.0.0.1"
@@ -23,6 +23,7 @@ app = FastAPI(title="Hidden Hire", lifespan=lifespan)
 app.include_router(jobs.router)
 app.include_router(tracker.router)
 app.include_router(health.router)
+app.include_router(profile.router)
 
 
 if __name__ == "__main__":

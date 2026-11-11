@@ -7,6 +7,8 @@ rapidfuzz==3.14.6
 sqlalchemy==2.1.8
 fastapi==0.162.4
 uvicorn==0.54.0
+pypdf==7.0.1
+python-multipart==0.0.33
 
 # Dev
 pytest==9.2.0
