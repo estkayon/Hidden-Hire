@@ -4,14 +4,54 @@ greenhouse:
   airbnb: Airbnb
   anthropic: Anthropic
   instacart: Instacart
+  # France
+  dataiku: Dataiku
+  algolia: Algolia
+  mirakl: Mirakl
+  # Spain
+  cabify: Cabify
+  typeform: Typeform
+  wallapop: Wallapop
+  feverup: Fever
+  # Switzerland
+  proton: Proton
+  scandit: Scandit
+  # Thailand
+  agoda: Agoda
 
 lever:
   palantir: Palantir
   spotify: Spotify
+  # France
+  contentsquare: Contentsquare
+  blablacar: BlaBlaCar
+  swile: Swile
+  malt: Malt
+  # Spain
+  jobandtalent: Jobandtalent
+  lodgify: Lodgify
+  # Switzerland
+  sonarsource: Sonar
 
 ashby:
   openai: OpenAI
   ramp: Ramp
+  # France
+  doctolib: Doctolib
+  alan: Alan
+  qonto: Qonto
+  backmarket: Back Market
+  sorare: Sorare
+  ledger: Ledger
+  pennylane: Pennylane
+  ankorstore: Ankorstore
+  photoroom: Photoroom
+  owkin: Owkin
+  # Spain
+  preply: Preply
+  # Switzerland
+  getyourguide: GetYourGuide
+  frontify: Frontify
 
 workable:
   huggingface: Hugging Face
@@ -19,9 +59,14 @@ workable:
   shopup: ShopUp
   enosis: Enosis
   optimizely: Optimizely
+  # Japan
+  mercari: Mercari
+  smartnews: SmartNews
 
 recruitee:
   bunq: bunq
+  holded: Holded
+  climeworks: Climeworks
 
 # Subdomain of <slug>.jobs.personio.de
 personio:
@@ -30,6 +75,9 @@ personio:
 # Career site host (teamtailor.com subdomain or the company's own domain)
 teamtailor:
   career.teamtailor.com: Teamtailor
+  payfit.teamtailor.com: PayFit
+  seedtag.teamtailor.com: Seedtag
+  idealista.teamtailor.com: idealista
 
 # Identifiers are case-sensitive.
 smartrecruiters:
