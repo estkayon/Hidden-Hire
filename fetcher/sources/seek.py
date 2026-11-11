@@ -24,6 +24,7 @@ SITES = {
     "NZ-Main": "https://nz.seek.com",
     "MY-Main": "https://my.jobstreet.com",
     "PH-Main": "https://ph.jobstreet.com",
+    "SG-Main": "https://sg.jobstreet.com",
 }
 SEARCH_PATH = "/api/jobsearch/v5/search"
 RUN_EVERY_HOURS = 12  # with a 3-hour schedule this gives 2 runs a day
