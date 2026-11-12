@@ -1,0 +1,116 @@
+.kit-text {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.kit-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.kit-btn {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #17323b, #2a5a5f);
+  color: #fbf9f0;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 14px 28px -16px rgb(18 48 58 / 0.9);
+  transition: transform 260ms var(--ease), opacity 260ms var(--ease);
+}
+
+.kit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.kit-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.kit-link {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--teal);
+  text-underline-offset: 3px;
+}
+
+.kit-ghost {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--teal);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 220ms var(--ease);
+}
+
+.kit-ghost:hover {
+  background: rgb(169 224 241 / 0.3);
+}
+
+/* CV preview popup: large, the PDF fills it */
+.popup.is-document {
+  width: min(1000px, 100%);
+  height: min(92vh, 1200px);
+  max-height: none;
+}
+
+.popup.is-document .popup-body {
+  height: 100%;
+  padding: 56px 16px 16px;
+  overflow: hidden;
+}
+
+.kit-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.kit-flags {
+  margin-top: 14px;
+  font-size: 0.85rem;
+}
+
+.kit-flags summary {
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.kit-flags ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.kit-hint {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.kit-error {
+  margin: 12px 0 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #b23b35;
+}

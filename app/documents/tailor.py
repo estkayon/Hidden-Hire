@@ -1,17 +1,26 @@
 """Tailor the master CV to one job with an LLM, then fact-check every change."""
 
 import argparse
+import json
 import logging
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, Field, ValidationError
 from rapidfuzz import fuzz, process
 
-from app.documents.cv import CvData, DocumentError, compile_pdf, load_master, render_tex
+from app.documents.cv import (
+    OUTPUT_DIR,
+    CvData,
+    DocumentError,
+    compile_pdf,
+    load_master,
+    render_tex,
+)
 from app.documents.factcheck import unsupported
 from app.llm.client import LLMError, complete
 from app.models import Job
@@ -263,11 +272,38 @@ def apply_plan(master: CvData, plan: TailorPlan) -> TailorResult:
     return TailorResult(cv=cv, flags=flags)
 
 
+def cv_files(job_id: str) -> dict[str, Path]:
+    base = OUTPUT_DIR / f"cv_{job_id}"
+    return {
+        "pdf": base.with_suffix(".pdf"),
+        "tex": base.with_suffix(".tex"),
+        "meta": base.with_suffix(".json"),
+    }
+
+
+def cv_status(job_id: str) -> dict:
+    """Whether a tailored CV exists for the job, when it was made and its fact-check notes."""
+    files = cv_files(job_id)
+    if not files["pdf"].exists():
+        return {"exists": False, "generated_at": None, "flags": []}
+    try:
+        meta = json.loads(files["meta"].read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        meta = {}
+    return {
+        "exists": True,
+        "generated_at": meta.get("generated_at"),
+        "flags": meta.get("flags", []),
+    }
+
+
 def generate_cv(job: Job) -> tuple[Path, list[str]]:
     """Tailored CV PDF for one job. Raises LLMError, ValueError or DocumentError."""
     master = load_master()
     result = apply_plan(master, request_plan(job, master))
     pdf = compile_pdf(render_tex(result.cv), name=f"cv_{job.id}")
+    meta = {"generated_at": datetime.now(UTC).isoformat(), "flags": result.flags}
+    cv_files(job.id)["meta"].write_text(json.dumps(meta, indent=2), encoding="utf-8")
     return pdf, result.flags
 
 

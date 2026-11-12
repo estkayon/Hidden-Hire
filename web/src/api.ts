@@ -193,6 +193,24 @@ export function requestRecruiterView(jobId: string): Promise<JobDetail> {
   return sendJson(`/api/jobs/${encodeURIComponent(jobId)}/recruiter-view`, 'POST')
 }
 
+export type CvStatus = {
+  exists: boolean
+  generated_at: string | null
+  flags: string[]
+}
+
+export function fetchCvStatus(jobId: string): Promise<CvStatus> {
+  return getJson(`/api/jobs/${encodeURIComponent(jobId)}/cv`)
+}
+
+export function generateCv(jobId: string): Promise<CvStatus> {
+  return sendJson(`/api/jobs/${encodeURIComponent(jobId)}/cv`, 'POST')
+}
+
+export function cvDownloadUrl(jobId: string, kind: 'pdf' | 'tex', inline = false): string {
+  return `/api/jobs/${encodeURIComponent(jobId)}/cv.${kind}${inline ? '?inline=true' : ''}`
+}
+
 export function fetchProfile(): Promise<ProfileState> {
   return getJson('/api/profile')
 }

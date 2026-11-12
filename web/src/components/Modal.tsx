@@ -8,10 +8,11 @@ type Props = {
   label: string
   onClose: () => void
   wide?: boolean
+  className?: string
   children: ReactNode
 }
 
-export function Modal({ label, onClose, wide, children }: Props) {
+export function Modal({ label, onClose, wide, className, children }: Props) {
   const [closing, setClosing] = useState(false)
 
   const close = useCallback(() => {
@@ -35,7 +36,7 @@ export function Modal({ label, onClose, wide, children }: Props) {
   return createPortal(
     <div className={`popup-overlay${closing ? ' is-closing' : ''}`} onClick={close}>
       <div
-        className={`popup${wide ? ' is-wide' : ''}`}
+        className={`popup${wide ? ' is-wide' : ''}${className ? ` ${className}` : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={label}

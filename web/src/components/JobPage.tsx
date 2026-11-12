@@ -11,6 +11,7 @@ import {
   safeUrl,
   timeAgo,
 } from '../format'
+import { ApplicationKit } from './ApplicationKit'
 import { Description } from './Description'
 import { Modal } from './Modal'
 import { RecruiterCard, RecruiterModal } from './RecruiterView'
@@ -216,6 +217,8 @@ export function JobPage({ jobId, onToggleSave }: Props) {
               onOpen={() => setPopup('recruiter')}
             />
           )}
+
+          <ApplicationKit jobId={job.id} />
 
           {alsoSeen.length > 0 && (
             <div className="side-card">
