@@ -755,6 +755,69 @@
   min-width: 0;
 }
 
+.job-main > * {
+  flex-shrink: 0;
+}
+
+/* Long descriptions are cut at the bottom of the sidebar; the rest opens in a popup */
+.job-desc {
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+}
+
+.job-desc-body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.job-desc.is-clipped .job-desc-body {
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+
+.desc-more {
+  flex-shrink: 0;
+  align-self: center;
+  width: min(260px, 100%);
+  height: 46px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #17323b, #2a5a5f);
+  color: #fbf9f0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 14px 28px -16px rgb(18 48 58 / 0.9);
+  transition: transform 260ms var(--ease);
+}
+
+.desc-more:hover {
+  transform: translateY(-2px);
+}
+
+/* .popup-title {
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.popup-sub {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+} */
+
+@media (min-width: 981px) {
+  .job-main {
+    max-height: max(var(--side-h, 100000px), 560px);
+  }
+  .job-desc {
+    flex-shrink: 1;
+  }
+}
+
 .job-hero,
 .job-section,
 .side-card {

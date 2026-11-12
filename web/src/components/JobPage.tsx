@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { fetchJob, requestRecruiterView, type Job, type JobDetail } from '../api'
 import { countryName } from '../countries'
 import {
@@ -11,6 +11,7 @@ import {
   timeAgo,
 } from '../format'
 import { Description } from './Description'
+import { Modal } from './Modal'
 import { RecruiterCard, RecruiterModal } from './RecruiterView'
 
 type Props = {
@@ -31,7 +32,11 @@ export function JobPage({ jobId, onToggleSave }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [judging, setJudging] = useState(false)
   const [judgeError, setJudgeError] = useState<string | null>(null)
-  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [popup, setPopup] = useState<'recruiter' | 'description' | null>(null)
+  const [sideHeight, setSideHeight] = useState<number | null>(null)
+  const [clipped, setClipped] = useState(false)
+  const sideRef = useRef<HTMLElement>(null)
+  const descRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -39,7 +44,7 @@ export function JobPage({ jobId, onToggleSave }: Props) {
     setJob(null)
     setError(null)
     setJudgeError(null)
-    setDetailsOpen(false)
+    setPopup(null)
     fetchJob(jobId, controller.signal)
       .then(setJob)
       .catch((err: Error) => {
@@ -47,6 +52,20 @@ export function JobPage({ jobId, onToggleSave }: Props) {
       })
     return () => controller.abort()
   }, [jobId])
+
+  // The description box ends where the sidebar ends; measure both as they change size.
+  useEffect(() => {
+    const side = sideRef.current
+    const desc = descRef.current
+    if (!side || !desc) return
+    const observer = new ResizeObserver(() => {
+      setSideHeight(side.offsetHeight)
+      setClipped(desc.scrollHeight > desc.clientHeight + 4)
+    })
+    observer.observe(side)
+    observer.observe(desc)
+    return () => observer.disconnect()
+  }, [job])
 
   if (error) {
     return (
@@ -105,9 +124,11 @@ export function JobPage({ jobId, onToggleSave }: Props) {
     }
   }
 
+  const layoutStyle = sideHeight ? ({ '--side-h': `${sideHeight}px` } as CSSProperties) : undefined
+
   return (
     <div className="job-page">
-      <div className="job-layout">
+      <div className="job-layout" style={layoutStyle}>
         <article className="job-main">
           <header className="job-hero">
             <div className="company-avatar" aria-hidden="true">
@@ -123,9 +144,16 @@ export function JobPage({ jobId, onToggleSave }: Props) {
             </div>
           </header>
 
-          <section className="job-section">
+          <section className={`job-section job-desc${clipped ? ' is-clipped' : ''}`}>
             <p className="eyebrow">Job description</p>
-            <Description text={job.description} />
+            <div className="job-desc-body" ref={descRef}>
+              <Description text={job.description} />
+            </div>
+            {clipped && (
+              <button type="button" className="desc-more" onClick={() => setPopup('description')}>
+                View full description
+              </button>
+            )}
           </section>
 
           {job.tags.length > 0 && (
@@ -142,7 +170,7 @@ export function JobPage({ jobId, onToggleSave }: Props) {
           )}
         </article>
 
-        <aside className="job-side">
+        <aside className="job-side" ref={sideRef}>
           <div className="apply-card">
             <p className="apply-title">Interested in this role?</p>
             {applyUrl && (
@@ -183,7 +211,7 @@ export function JobPage({ jobId, onToggleSave }: Props) {
               judging={judging}
               error={judgeError}
               onRequest={getRecruiterView}
-              onOpen={() => setDetailsOpen(true)}
+              onOpen={() => setPopup('recruiter')}
             />
           )}
 
@@ -205,8 +233,19 @@ export function JobPage({ jobId, onToggleSave }: Props) {
         </aside>
       </div>
 
-      {detailsOpen && job.recruiter_view && (
-        <RecruiterModal view={job.recruiter_view} onClose={() => setDetailsOpen(false)} />
+      {popup === 'recruiter' && job.recruiter_view && (
+        <RecruiterModal view={job.recruiter_view} onClose={() => setPopup(null)} />
+      )}
+
+      {popup === 'description' && (
+        <Modal label="Job description" wide onClose={() => setPopup(null)}>
+          <header className="popup-head">
+            <p className="eyebrow">Job description</p>
+            <h2 className="popup-title">{job.title}</h2>
+            <p className="popup-sub">{[job.company, ...meta].join('  ·  ')}</p>
+          </header>
+          <Description text={job.description} />
+        </Modal>
       )}
     </div>
   )

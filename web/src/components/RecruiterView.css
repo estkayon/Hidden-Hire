@@ -41,73 +41,14 @@
   color: #b23b35;
 }
 
-/* Popup */
-.rv-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgb(18 48 58 / 0.32);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: rv-fade-in 260ms var(--ease) both;
-}
-
-.rv-modal {
-  position: relative;
-  width: min(680px, 100%);
-  max-height: min(86vh, 900px);
-  overflow-y: auto;
-  padding: 30px 32px;
-  border: 1px solid rgb(169 224 241 / 0.6);
-  border-radius: 26px;
-  background: #fbf9f0;
-  box-shadow:
-    0 0 0 4px rgb(202 255 166 / 0.2),
-    0 40px 90px -30px rgb(18 48 58 / 0.7);
-  animation: rv-pop-in 340ms var(--ease) both;
-}
-
-.rv-overlay.is-closing {
-  animation: rv-fade-out 220ms var(--ease) both;
-}
-
-.rv-overlay.is-closing .rv-modal {
-  animation: rv-pop-out 220ms var(--ease) both;
-}
-
-.rv-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: #fffef9;
-  color: var(--text);
-  font-size: 1.3rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 200ms var(--ease), background 200ms var(--ease);
-}
-
-.rv-close:hover {
-  transform: rotate(90deg);
-  background: var(--sky);
-}
-
-/* Details */
+/* Details (shown in the popup) */
 .rv-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  margin: 0 40px 22px 0;
+  margin: 0 0 24px;
+  padding-right: 48px;
 }
 
 .rv-summary {
@@ -236,32 +177,6 @@
   margin-top: 4px;
 }
 
-@keyframes rv-fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes rv-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes rv-pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.96);
-  }
-}
-
-@keyframes rv-pop-out {
-  to {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-  }
-}
-
 @keyframes rv-grow {
   from {
     transform: scaleX(0);
@@ -269,9 +184,6 @@
 }
 
 @media (max-width: 760px) {
-  .rv-modal {
-    padding: 24px 20px;
-  }
   .rv-head {
     flex-direction: column-reverse;
     margin-right: 0;

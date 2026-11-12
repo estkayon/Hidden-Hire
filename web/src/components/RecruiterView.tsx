@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import type { RecruiterView as View } from '../api'
 import { MatchRing, band } from './MatchRing'
+import { Modal } from './Modal'
 import './RecruiterView.css'
 
 type DimensionKey = 'skills' | 'experience' | 'eligibility' | 'domain' | 'education'
@@ -14,7 +13,7 @@ const DIMENSIONS: { key: DimensionKey; label: string; weight: string }[] = [
   { key: 'education', label: 'Education', weight: '5%' },
 ]
 
-const CLOSE_MS = 220
+// const CLOSE_MS = 220
 
 function List({ title, items, tone }: { title: string; items: string[]; tone: 'good' | 'gap' | 'block' }) {
   if (items.length === 0) return null
@@ -72,42 +71,10 @@ function Details({ view }: { view: View }) {
 }
 
 export function RecruiterModal({ view, onClose }: { view: View; onClose: () => void }) {
-  const [closing, setClosing] = useState(false)
-
-  const close = useCallback(() => {
-    setClosing(true)
-    window.setTimeout(onClose, CLOSE_MS)
-  }, [onClose])
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
-    }
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [close])
-
-  return createPortal(
-    <div className={`rv-overlay${closing ? ' is-closing' : ''}`} onClick={close}>
-      <div
-        className="rv-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Recruiter view"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button type="button" className="rv-close" aria-label="Close" onClick={close}>
-          ×
-        </button>
-        <Details view={view} />
-      </div>
-    </div>,
-    document.body,
+  return (
+    <Modal label="Recruiter view" onClose={onClose}>
+      <Details view={view} />
+    </Modal>
   )
 }
 
