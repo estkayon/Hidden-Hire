@@ -109,6 +109,28 @@ def test_save_and_unsave(client):
     assert client.post("/api/saved/missing").status_code == 404
 
 
+def test_match_filters_need_a_cv(client, monkeypatch, tmp_path):
+    from app import profile as store
+    from app.db import get_session
+    from app.models import Score
+
+    session = next(app.dependency_overrides[get_session]())
+    session.add_all(
+        [Score(job_id="new", final_score=85), Score(job_id="week", final_score=40)]
+    )
+    session.commit()
+
+    monkeypatch.setattr(store, "PROFILE_DIR", tmp_path)
+    no_cv = client.get("/api/jobs", params={"relevance": "relevant"}).json()
+    assert {j["match"] for j in no_cv["jobs"]} == {None}
+
+    (tmp_path / "cv.txt").write_text("cv", encoding="utf-8")
+    relevant = client.get("/api/jobs", params={"relevance": "relevant"}).json()
+    assert [(j["id"], j["match"]) for j in relevant["jobs"]] == [("new", 85)]
+    by_match = client.get("/api/jobs", params={"sort": "match"}).json()
+    assert [j["id"] for j in by_match["jobs"]] == ["new", "week"]
+
+
 def test_job_detail_and_404(client):
     assert client.get("/api/jobs/new").json()["title"] == "ML Engineer"
     assert client.get("/api/jobs/missing").status_code == 404

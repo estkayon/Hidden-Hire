@@ -171,6 +171,10 @@ def save_profile(profile: Profile) -> None:
     )
 
 
+def has_cv() -> bool:
+    return _path("cv.txt").exists()
+
+
 def cv_text() -> str | None:
     path = _path("cv.txt")
     return path.read_text(encoding="utf-8") if path.exists() else None

@@ -19,6 +19,17 @@ export type Job = {
   is_new: boolean
   country_tier: number
   saved: boolean
+  match: number | null
+}
+
+export type ScoreBreakdown = {
+  skills: number
+  semantic: number
+  role: number
+  seniority: number
+  location: number
+  matched_skills: string[]
+  missing_skills: string[]
 }
 export type JobList = {
   total: number
@@ -31,6 +42,7 @@ export type JobDetail = Job & {
   apply_url: string | null
   apply_email: string | null
   tags: string[]
+  score_breakdown: ScoreBreakdown | null
 }
 
 export type PasteInput = {
@@ -51,6 +63,9 @@ export type Filters = {
   postedWithin: string
   source: string
   savedOnly: boolean
+  relevance: '' | 'relevant' | 'other'
+  minMatch: string
+  sort: '' | 'match'
 }
 
 export const EMPTY_FILTERS: Filters = {
@@ -60,6 +75,9 @@ export const EMPTY_FILTERS: Filters = {
   postedWithin: '',
   source: '',
   savedOnly: false,
+  relevance: '',
+  minMatch: '',
+  sort: '',
 }
 export const PAGE_SIZE = 30
 
@@ -71,6 +89,9 @@ export function toParams(filters: Filters): URLSearchParams {
   if (filters.postedWithin) params.set('posted_within_hours', filters.postedWithin)
   if (filters.source) params.set('source', filters.source)
   if (filters.savedOnly) params.set('saved', 'true')
+  if (filters.relevance) params.set('relevance', filters.relevance)
+  if (filters.minMatch) params.set('min_match', filters.minMatch)
+  if (filters.sort) params.set('sort', filters.sort)
   return params
 }
 

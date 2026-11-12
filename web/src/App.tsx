@@ -16,6 +16,7 @@ import { Footer } from './components/Footer'
 import { HealthPage } from './components/HealthPage'
 import { JobCard } from './components/JobCard'
 import { JobPage } from './components/JobPage'
+import { ListBar } from './components/ListBar'
 import { Logo } from './components/Logo'
 import { Pagination } from './components/Pagination'
 import { PasteJobModal } from './components/PasteJobModal'
@@ -243,6 +244,7 @@ export default function App() {
         </section>
 
         <main className="content" ref={contentRef}>
+          {hasCv && <ListBar filters={filters} onChange={updateFilters} />}
           {error && <p className="notice">Something went wrong ({error}). Is the API running?</p>}
 
           {!error && !loading && jobs.length === 0 && (

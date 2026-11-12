@@ -146,6 +146,8 @@ export function JobPage({ jobId, onToggleSave }: Props) {
             </button>
           </div>
 
+          {/* {job.match !== null && <MatchCard match={job.match} breakdown={job.score_breakdown} />} */}
+
           <div className="side-card">
             <p className="eyebrow">Overview</p>
             <dl className="facts">

@@ -2,7 +2,7 @@
 
 import re
 from datetime import UTC, date, datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -10,7 +10,8 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Application, Job
+from app.models import Application, Job, Score
+from app.profile import has_cv
 from app.sync import naive_utc, to_row
 from fetcher.models import Job as JobRecord
 from fetcher.models import make_job_id
@@ -18,6 +19,7 @@ from fetcher.normalize import country_tier, html_to_text, normalize_job
 
 NEW_HOURS = 48
 MAIN_VIEW_DAYS = 7
+RELEVANT_THRESHOLD = 60
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+\w")
 URL = re.compile(r"https?://[^\s<>\"')\]]+")
 HTML_TAG = re.compile(r"</?[a-z][^>]*>", re.IGNORECASE)
@@ -47,6 +49,7 @@ class JobSummary(BaseModel):
     is_new: bool
     country_tier: int
     saved: bool
+    match: int | None
 
 
 class JobDetail(JobSummary):
@@ -55,6 +58,7 @@ class JobDetail(JobSummary):
     apply_url: str | None
     apply_email: str | None
     tags: list[str]
+    score_breakdown: dict | None
 
 
 class JobList(BaseModel):
@@ -82,7 +86,9 @@ class PasteJob(BaseModel):
     url: str | None = Field(default=None, max_length=2_000, pattern=r"^https?://")
 
 
-def _to_model[T: JobSummary](job: Job, model: type[T], now: datetime, saved: bool) -> T:
+def _to_model[T: JobSummary](
+    job: Job, model: type[T], now: datetime, saved: bool, score: Score | None
+) -> T:
     seen_at = (job.posted_at or job.fetched_at).replace(tzinfo=UTC)
     data = {
         name: getattr(job, name) for name in model.model_fields if hasattr(job, name)
@@ -91,11 +97,22 @@ def _to_model[T: JobSummary](job: Job, model: type[T], now: datetime, saved: boo
     data["is_new"] = now - seen_at <= timedelta(hours=NEW_HOURS)
     data["country_tier"] = country_tier(job.country)
     data["saved"] = saved
+    data["match"] = (
+        round(score.final_score) if score and score.final_score is not None else None
+    )
+    if "score_breakdown" in model.model_fields:
+        data["score_breakdown"] = (
+            (score.breakdown or {}).get("stage1") if score else None
+        )
     if HTML_TAG.search(data.get("description") or ""):
         data["description"] = html_to_text(
             data["description"]
         )  # older imports kept raw HTML
     return model(**data)
+
+
+def _score_of(session: Session, job_id: str) -> Score | None:
+    return session.get(Score, job_id) if has_cv() else None
 
 
 @router.get("", response_model=JobList)
@@ -107,17 +124,21 @@ def list_jobs(
     source: Annotated[list[str] | None, Query()] = None,
     posted_within_hours: Annotated[int | None, Query(ge=1, le=240)] = None,
     saved: bool = False,
+    relevance: Literal["relevant", "other"] | None = None,
+    min_match: Annotated[int | None, Query(ge=0, le=100)] = None,
+    sort: Literal["newest", "match"] = "newest",
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> JobList:
-    """Newest first. Without a search query or the saved filter, only the last 7 days are shown."""
+    """Without a search query or the saved filter, only the last 7 days are shown.
+    Match filters and sorting apply only when a CV is uploaded."""
     now = datetime.now(UTC)
+    scored = has_cv()
     seen_at = func.coalesce(Job.posted_at, Job.fetched_at)
-    stmt = select(Job)
+    stmt = select(Job, Score).outerjoin(Score, Score.job_id == Job.id)
 
     if saved:
         stmt = stmt.where(Job.id.in_(select(Application.job_id)))
-
     if q:
         stmt = stmt.where(
             or_(
@@ -138,21 +159,33 @@ def list_jobs(
         stmt = stmt.where(Job.work_type.in_(work_type))
     if source:
         stmt = stmt.where(Job.source.in_(source))
+    if scored and relevance == "relevant":
+        stmt = stmt.where(Score.final_score >= RELEVANT_THRESHOLD)
+    elif scored and relevance == "other":
+        stmt = stmt.where(
+            or_(Score.final_score < RELEVANT_THRESHOLD, Score.final_score.is_(None))
+        )
+    if scored and min_match is not None:
+        stmt = stmt.where(Score.final_score >= min_match)
+
+    order = [seen_at.desc()]
+    if scored and sort == "match":
+        order = [Score.final_score.desc().nulls_last(), seen_at.desc()]
 
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-    rows = list(
-        session.scalars(stmt.order_by(seen_at.desc()).limit(limit).offset(offset))
-    )
+    rows = session.execute(stmt.order_by(*order).limit(limit).offset(offset)).all()
+    ids = [job.id for job, _ in rows]
     saved_ids = set(
-        session.scalars(
-            select(Application.job_id).where(
-                Application.job_id.in_([j.id for j in rows])
-            )
-        )
+        session.scalars(select(Application.job_id).where(Application.job_id.in_(ids)))
     )
     return JobList(
         total=total,
-        jobs=[_to_model(job, JobSummary, now, job.id in saved_ids) for job in rows],
+        jobs=[
+            _to_model(
+                job, JobSummary, now, job.id in saved_ids, score if scored else None
+            )
+            for job, score in rows
+        ],
     )
 
 
@@ -179,9 +212,8 @@ def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
     job_id = make_job_id("paste", body.text)
     existing = session.get(Job, job_id)
     if existing is not None:
-        return _to_model(
-            existing, JobDetail, now, session.get(Application, job_id) is not None
-        )
+        saved = session.get(Application, job_id) is not None
+        return _to_model(existing, JobDetail, now, saved, _score_of(session, job_id))
 
     email = EMAIL.search(body.text)
     link = URL.search(body.text)
@@ -202,7 +234,7 @@ def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
     row = to_row(record)
     session.add(row)
     session.commit()
-    return _to_model(row, JobDetail, now, saved=False)
+    return _to_model(row, JobDetail, now, saved=False, score=None)
 
 
 @router.get("/{job_id}", response_model=JobDetail)
@@ -210,6 +242,7 @@ def get_job(job_id: str, session: SessionDep) -> JobDetail:
     job = session.get(Job, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    saved = session.get(Application, job_id) is not None
     return _to_model(
-        job, JobDetail, datetime.now(UTC), session.get(Application, job_id) is not None
+        job, JobDetail, datetime.now(UTC), saved, _score_of(session, job_id)
     )

@@ -1,0 +1,387 @@
+/* Job card: colors follow the reference design */
+.job-card {
+  --jc-bg: #fbf9f0;
+  --jc-ink: #12303a;
+  --jc-muted: #5b6c71;
+  --jc-line: rgb(18 48 58 / 0.1);
+
+  gap: 12px;
+  padding: 18px 24px 16px;
+  background: var(--jc-bg);
+  border: 1px solid rgb(169 224 241 / 0.55);
+  border-radius: 26px;
+  box-shadow:
+    0 0 0 4px rgb(202 255 166 / 0.18),
+    0 24px 50px -34px rgb(18 48 58 / 0.55);
+  color: var(--jc-ink);
+}
+
+.job-card:hover {
+  background: #fdfcf6;
+  border-color: rgb(169 224 241 / 0.9);
+  box-shadow:
+    0 0 0 4px rgb(202 255 166 / 0.3),
+    0 30px 60px -32px rgb(18 48 58 / 0.6);
+}
+
+.jc-icon {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Top row */
+.jc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.jc-company {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.jc-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #a9e0f1, #caffa6);
+  border: 1px solid rgb(18 48 58 / 0.08);
+  color: var(--jc-ink);
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.jc-company-name {
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.jc-new {
+  position: relative;
+  flex-shrink: 0;
+  padding: 3px 11px;
+  border: 2px solid #b6e9a0;
+  border-radius: 999px;
+  background: #d8f7b5;
+  color: #1f5132;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.jc-new::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3fcf8e;
+  box-shadow: 0 0 0 0 rgb(63 207 142 / 0.6);
+  animation: jc-ping 2s ease-out infinite;
+}
+
+.jc-top-right {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.jc-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--jc-muted);
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.jc-save {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--jc-line);
+  border-radius: 50%;
+  background: #fffef9;
+  box-shadow: 0 8px 18px -12px rgb(18 48 58 / 0.45);
+  cursor: pointer;
+  transition: transform 240ms var(--ease), background 240ms var(--ease);
+}
+
+.jc-save path {
+  fill: transparent;
+  stroke: var(--jc-ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  transition: fill 240ms var(--ease);
+}
+
+.jc-save:hover {
+  transform: translateY(-1px);
+}
+
+.jc-save.is-saved {
+  background: var(--jc-ink);
+  animation: pop 360ms var(--ease);
+}
+
+.jc-save.is-saved path {
+  fill: #caffa6;
+  stroke: #caffa6;
+}
+
+/* Body: title, chips and the match ring */
+.jc-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.jc-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.jc-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+.jc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--jc-ink);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.jc-chip.is-work {
+  background: #d4eaf2;
+}
+
+.jc-chip.is-level {
+  background: #ddfbc0;
+}
+
+.jc-chip.is-salary {
+  background: #fffef9;
+  border: 1px solid var(--jc-line);
+}
+
+/* Footer */
+.jc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--jc-line);
+}
+
+.jc-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--jc-muted);
+}
+
+.jc-place span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.jc-apply {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #17323b, #2a5a5f);
+  color: #fbf9f0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 14px 28px -16px rgb(18 48 58 / 0.9);
+  transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+
+.jc-apply span {
+  color: #7ee0a0;
+  font-size: 1.15rem;
+  transition: transform 260ms var(--ease);
+}
+
+.jc-apply:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 18px 32px -16px rgb(18 48 58 / 0.95);
+}
+
+.jc-apply:hover span {
+  transform: translate(2px, -2px);
+}
+
+/* Match ring */
+.match-ring {
+  --ring-a: #c0443d;
+  --ring-b: #ef7a6f;
+  --ring-glow: rgb(239 122 111 / 0.35);
+  position: relative;
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  filter: drop-shadow(0 8px 16px var(--ring-glow));
+  animation: ring-in 700ms var(--ease) both;
+}
+
+.match-ring.is-great {
+  --ring-a: #1c7c52;
+  --ring-b: #45d995;
+  --ring-glow: rgb(69 217 149 / 0.35);
+}
+
+.match-ring.is-good {
+  --ring-a: #c99a16;
+  --ring-b: #f2cc4d;
+  --ring-glow: rgb(242 204 77 / 0.35);
+}
+
+.match-ring.is-fair {
+  --ring-a: #e0823d;
+  --ring-b: #f6b27a;
+  --ring-glow: rgb(246 178 122 / 0.35);
+}
+
+.match-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ring-stop-a {
+  stop-color: var(--ring-a);
+}
+
+.ring-stop-b {
+  stop-color: var(--ring-b);
+}
+
+.ring-track {
+  fill: #fbf9f0;
+  stroke: rgb(18 48 58 / 0.08);
+  stroke-width: 8;
+}
+
+.ring-value {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  animation: ring-draw 1100ms var(--ease) both;
+}
+
+.ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-label strong {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+  font-feature-settings: 'tnum' 1;
+}
+
+.ring-label span {
+  margin-top: 3px;
+  color: var(--jc-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@keyframes ring-draw {
+  from {
+    stroke-dasharray: 0 999;
+  }
+}
+
+@keyframes ring-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes jc-ping {
+  0% {
+    box-shadow: 0 0 0 0 rgb(63 207 142 / 0.6);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px rgb(63 207 142 / 0);
+  }
+}
+
+@media (max-width: 760px) {
+  .job-card {
+    padding: 22px 20px 20px;
+  }
+  .jc-time {
+    display: none;
+  }
+  .jc-title {
+    font-size: 1.35rem;
+  }
+  .match-ring {
+    width: 88px;
+    height: 88px;
+  }
+}
