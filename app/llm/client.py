@@ -39,18 +39,27 @@ def complete(
 ) -> str:
     """Text of the model's reply. Raises LLMError so callers can fall back cleanly."""
     settings = load_settings()
+    task_settings = settings[task]
+    optional = {
+        key: task_settings[key]
+        for key in ("max_tokens", "reasoning_effort")
+        if key in task_settings
+    }
     try:
         response = litellm.completion(
-            model=model or settings[task]["model"],
+            model=model or task_settings["model"],
             messages=messages,
             temperature=temperature,
             timeout=settings.get("timeout_seconds", 60),
             num_retries=2,
             response_format={"type": "json_object"} if json_output else None,
+            **optional,
         )
     except Exception as exc:  # litellm maps every provider error to its own types; never log the message (may echo input)
-        raise LLMError(type(exc).__name__) from exc
-
+        status = getattr(exc, "status_code", None)
+        raise LLMError(
+            f"{type(exc).__name__}{f' (HTTP {status})' if status else ''}"
+        ) from exc
     content = response.choices[0].message.content
     if not content:
         raise LLMError("empty response")

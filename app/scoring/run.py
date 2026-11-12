@@ -10,9 +10,8 @@ from app.db import SessionLocal, init_db
 from app.models import Job, Score
 from app.profile import Profile, cv_text, load_profile
 from app.scoring.embed import similarities
+from app.scoring.llm_score import STAGE1_MODEL
 from app.scoring.rules import stage1_score
-
-STAGE1_MODEL = "stage1"
 
 log = logging.getLogger("scoring")
 

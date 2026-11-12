@@ -4,5 +4,8 @@ llm:
   timeout_seconds: 60
   scoring:
     model: groq/openai/gpt-oss-20b
+    max_tokens: 1500
+    reasoning_effort: low
+    pause_seconds: 30 # Groq free tier: 8K tokens per minute for this model
   documents:
     model: groq/openai/gpt-oss-120b

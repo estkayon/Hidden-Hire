@@ -130,13 +130,16 @@ def import_health(session: Session, repo_dir: Path) -> int:
 def score_jobs() -> None:
     """Stage 1 scoring after import. Needs requirements-ml.txt and an uploaded CV."""
     try:
+        from app.scoring.llm_score import run_stage2
         from app.scoring.run import run_scoring  # heavy ML import, only when installed
     except ImportError:
         log.warning("scoring skipped: install requirements-ml.txt")
         return
     scored = run_scoring()
-    if scored is not None:
-        log.info("scored %d jobs", scored)
+    if scored is None:
+        return
+    log.info("scored %d jobs", scored)
+    log.info("stage 2 judged %d jobs", run_stage2() or 0)
 
 
 def main() -> None:
