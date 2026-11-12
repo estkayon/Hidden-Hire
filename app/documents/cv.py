@@ -57,6 +57,9 @@ class Experience(BaseModel):
     dates: str
     organization: str
     location: str = ""
+    stack: list[str] = Field(
+        default_factory=list
+    )  # tools really used; not printed, used for fact checks
     bullets: list[str]
 
 
@@ -64,6 +67,9 @@ class Project(BaseModel):
     name: str
     pinned: bool = False  # always shown first in tailored CVs
     links: list[Link] = Field(default_factory=list)
+    stack: list[str] = Field(
+        default_factory=list
+    )  # tools really used; not printed, used for fact checks
     bullets: list[str]
 
 

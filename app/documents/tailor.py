@@ -36,6 +36,7 @@ MAX_EXPERIENCE_BULLETS = 4
 MAX_PROJECT_BULLETS = 3
 MAX_SUMMARY_CHARS = 700
 MAX_JOB_CHARS = 3500
+MAX_KEYWORDS = 10
 MIN_LENGTH_RATIO = 0.75  # a tailored item shorter than this has lost detail
 NAME_MATCH_SCORE = 90
 ODD_HYPHENS = str.maketrans({"\u2010": "-", "\u2011": "-", "\u2212": "-"})
@@ -59,6 +60,8 @@ class PlanProject(BaseModel):
 
 
 class TailorPlan(BaseModel):
+    keywords: list[str] = Field(default_factory=list)
+    optional_projects: list[str] = Field(default_factory=list)
     summary: str = ""
     skills: list[PlanSkills] = Field(default_factory=list)
     experience: list[PlanExperience] = Field(default_factory=list)
@@ -69,6 +72,7 @@ class TailorPlan(BaseModel):
 class TailorResult:
     cv: CvData
     flags: list[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
 
 
 def master_text(cv: CvData) -> str:
@@ -90,15 +94,20 @@ def _master_for_llm(cv: CvData) -> str:
                 "title": e.title,
                 "organization": e.organization,
                 "dates": e.dates,
+                "stack": e.stack,
                 "bullets": e.bullets,
             }
             for i, e in enumerate(cv.experience)
         ],
         "pinned_projects": [
-            {"name": p.name, "bullets": p.bullets} for p in cv.projects if p.pinned
+            {"name": p.name, "stack": p.stack, "bullets": p.bullets}
+            for p in cv.projects
+            if p.pinned
         ],
         "optional_projects": [
-            {"name": p.name, "bullets": p.bullets} for p in cv.projects if not p.pinned
+            {"name": p.name, "stack": p.stack, "bullets": p.bullets}
+            for p in cv.projects
+            if not p.pinned
         ],
         "research": [{"title": r.title, "bullets": r.bullets} for r in cv.research],
         "education": [
@@ -139,8 +148,12 @@ def _key(name: str) -> str:
 
 
 def _match[T](name: str, options: dict[str, T]) -> T | None:
-    """Find an item by name, tolerating hyphen, case and small spelling differences."""
-    keyed = {_key(key): value for key, value in options.items()}
+    """Find an item by its full or short name (the part before a dash), tolerating small differences."""
+    keyed = {}
+    for key, value in options.items():
+        keyed[_key(key)] = value
+        short = re.split(r"\s[–-]\s", key, maxsplit=1)[0]
+        keyed.setdefault(_key(short), value)
     found = process.extractOne(
         _key(name), list(keyed), scorer=fuzz.ratio, score_cutoff=NAME_MATCH_SCORE
     )
@@ -177,6 +190,7 @@ def _checked_bullets(
 def _skills(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
     """Reordered master skills. Items not in the master are dropped, missing ones are kept at the end."""
     groups = {g.name: g for g in master.skills}
+    all_items = {item for g in master.skills for item in g.items}
     ordered, seen_groups = [], set()
     for planned in plan.skills:
         group = _match(planned.name, groups)
@@ -187,7 +201,8 @@ def _skills(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
         for item in planned.items:
             match = _match(item, known)
             if match is None:
-                flags.append(f"skills: dropped '{item}' (not in master CV)")
+                if _match(item, {i: i for i in all_items}) is None:
+                    flags.append(f"skills: dropped '{item}' (not in master CV)")
             elif match not in items:
                 items.append(match)
         items += [item for item in group.items if item not in items]
@@ -197,32 +212,40 @@ def _skills(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
 
 
 def _projects(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
+    """Pinned projects first, then the optional projects the model chose, each fact-checked."""
     pinned = [p for p in master.projects if p.pinned]
     optional = {p.name: p for p in master.projects if not p.pinned}
     every = {p.name: p for p in master.projects}
 
-    planned, chosen = {}, []
+    planned = {}
     for item in plan.projects:
         project = _match(item.name, every)
         if project is None:
             flags.append(f"projects: ignored unknown project '{item.name}'")
-            continue
-        planned[project.name] = item
+        else:
+            planned[project.name] = item
+
+    chosen = []
+    for name in plan.optional_projects or [item.name for item in plan.projects]:
+        project = _match(name, optional)
         if (
-            project.name in optional
+            project is not None
             and project not in chosen
             and len(chosen) < OPTIONAL_PROJECTS
         ):
             chosen.append(project)
-    for project in optional.values():
-        if len(chosen) >= OPTIONAL_PROJECTS:
-            break
-        if project not in chosen:
-            chosen.append(project)
+    if len(chosen) < OPTIONAL_PROJECTS:
+        given = ", ".join(plan.optional_projects) or "none"
+        flags.append(
+            f"projects: the model chose too few optional projects (gave: {given}); filled from the master order"
+        )
+        chosen += [p for p in optional.values() if p not in chosen][
+            : OPTIONAL_PROJECTS - len(chosen)
+        ]
 
     result = []
     for project in [*pinned, *chosen]:
-        source = f"{project.name}\n" + "\n".join(project.bullets)
+        source = "\n".join([project.name, *project.stack, *project.bullets])
         new = planned.get(project.name)
         bullets = _checked_bullets(
             new.bullets if new else [],
@@ -250,7 +273,7 @@ def apply_plan(master: CvData, plan: TailorPlan) -> TailorResult:
     planned_experience = {e.index: e.bullets for e in plan.experience}
     experience = []
     for index, job in enumerate(master.experience):
-        job_source = f"{job.title}\n{job.organization}\n" + "\n".join(job.bullets)
+        job_source = "\n".join([job.title, job.organization, *job.stack, *job.bullets])
         bullets = _checked_bullets(
             planned_experience.get(index, []),
             job.bullets,
@@ -269,7 +292,13 @@ def apply_plan(master: CvData, plan: TailorPlan) -> TailorResult:
             "projects": _projects(master, plan, flags),
         }
     )
-    return TailorResult(cv=cv, flags=flags)
+    lower_source = source.lower()
+    keywords = [
+        _clean(k)
+        for k in plan.keywords
+        if k.strip() and _clean(k).lower() in lower_source
+    ]
+    return TailorResult(cv=cv, flags=flags, keywords=keywords[:MAX_KEYWORDS])
 
 
 def cv_files(job_id: str) -> dict[str, Path]:
@@ -282,10 +311,10 @@ def cv_files(job_id: str) -> dict[str, Path]:
 
 
 def cv_status(job_id: str) -> dict:
-    """Whether a tailored CV exists for the job, when it was made and its fact-check notes."""
+    """Whether a tailored CV exists for the job, when it was made, its fact-check notes and keywords."""
     files = cv_files(job_id)
     if not files["pdf"].exists():
-        return {"exists": False, "generated_at": None, "flags": []}
+        return {"exists": False, "generated_at": None, "flags": [], "keywords": []}
     try:
         meta = json.loads(files["meta"].read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -294,6 +323,7 @@ def cv_status(job_id: str) -> dict:
         "exists": True,
         "generated_at": meta.get("generated_at"),
         "flags": meta.get("flags", []),
+        "keywords": meta.get("keywords", []),
     }
 
 
@@ -302,7 +332,11 @@ def generate_cv(job: Job) -> tuple[Path, list[str]]:
     master = load_master()
     result = apply_plan(master, request_plan(job, master))
     pdf = compile_pdf(render_tex(result.cv), name=f"cv_{job.id}")
-    meta = {"generated_at": datetime.now(UTC).isoformat(), "flags": result.flags}
+    meta = {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "flags": result.flags,
+        "keywords": result.keywords,
+    }
     cv_files(job.id)["meta"].write_text(json.dumps(meta, indent=2), encoding="utf-8")
     return pdf, result.flags
 
@@ -330,6 +364,7 @@ def main() -> None:
     print(f"Wrote {pdf}")
     for flag in flags:
         print(f"- {flag}")
+    print(f"Keywords: {', '.join(cv_status(args.job_id)['keywords'])}")
 
 
 if __name__ == "__main__":

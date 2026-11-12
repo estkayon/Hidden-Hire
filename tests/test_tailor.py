@@ -50,19 +50,28 @@ def test_unsupported_finds_new_numbers_and_skills():
 
 def test_pinned_projects_first_and_two_optional_chosen():
     plan = TailorPlan(
-        projects=[
-            {"name": "Option E", "bullets": []},
-            {"name": "Made Up", "bullets": []},
-        ]
+        optional_projects=["Option E", "Option D"],
+        projects=[{"name": "Made Up", "bullets": []}],
     )
     result = apply_plan(MASTER, plan)
     assert [p.name for p in result.cv.projects] == [
         "Pinned A",
         "Pinned B",
         "Option E",
-        "Option C",
+        "Option D",
     ]
     assert any("Made Up" in flag for flag in result.flags)
+
+
+def test_too_few_optional_projects_are_filled_and_flagged():
+    result = apply_plan(MASTER, TailorPlan(optional_projects=["Option E"]))
+    assert [p.name for p in result.cv.projects][2:] == ["Option E", "Option C"]
+    assert any("too few optional" in flag for flag in result.flags)
+
+
+def test_only_supported_keywords_are_kept():
+    result = apply_plan(MASTER, TailorPlan(keywords=["Docker", "Kubernetes", "SQL"]))
+    assert result.keywords == ["Docker", "SQL"]
 
 
 def test_invented_facts_fall_back_to_master():
@@ -83,7 +92,7 @@ def test_invented_facts_fall_back_to_master():
     assert result.cv.summary == MASTER.summary
     assert result.cv.experience[0].bullets == MASTER.experience[0].bullets
     assert result.cv.projects[0].bullets == ["Reached 5.68% MAPE with Python."]
-    assert len(result.flags) == 4
+    assert len(result.flags) == 5
 
 
 def test_shorter_bullets_keep_master_detail():
@@ -116,7 +125,8 @@ def test_project_names_match_despite_odd_hyphens_and_typos():
                 "bullets": ["Achieved 5.68% MAPE in forecasting with Python."],
             },
             {"name": "option  d", "bullets": []},
-        ]
+        ],
+        optional_projects=["option  d", "Option C"],
     )
     result = apply_plan(MASTER, plan)
     assert [p.name for p in result.cv.projects] == [
@@ -131,9 +141,39 @@ def test_project_names_match_despite_odd_hyphens_and_typos():
     assert not [flag for flag in result.flags if "project" in flag or "Pinned" in flag]
 
 
+def test_stack_allows_real_tools_in_bullets():
+    master = MASTER.model_copy(deep=True)
+    master.projects[0].stack = ["Python", "Docker"]
+    plan = TailorPlan(
+        projects=[
+            {
+                "name": "Pinned A",
+                "bullets": ["Reached 5.68% MAPE using Python and Docker."],
+            }
+        ]
+    )
+    result = apply_plan(master, plan)
+    assert result.cv.projects[0].bullets == [
+        "Reached 5.68% MAPE using Python and Docker."
+    ]
+
+
+def test_optional_project_matches_short_name():
+    master = MASTER.model_copy(deep=True)
+    master.projects[4].name = "Option E – Command Line Tool"
+    result = apply_plan(master, TailorPlan(optional_projects=["Option E", "Option D"]))
+    assert [p.name for p in result.cv.projects][2:] == [
+        "Option E – Command Line Tool",
+        "Option D",
+    ]
+
+
 def test_skills_reordered_without_new_items():
-    plan = TailorPlan(skills=[{"name": "Tools", "items": ["Git", "Terraform"]}])
+    plan = TailorPlan(
+        skills=[{"name": "Tools", "items": ["Git", "Python", "Terraform"]}]
+    )
     result = apply_plan(MASTER, plan)
     assert [g.name for g in result.cv.skills] == ["Tools", "Programming"]
     assert result.cv.skills[0].items == ["Git", "Docker"]
     assert any("Terraform" in flag for flag in result.flags)
+    assert not any("Python" in flag for flag in result.flags)

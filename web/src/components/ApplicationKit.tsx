@@ -40,6 +40,18 @@ export function ApplicationKit({ jobId }: { jobId: string }) {
           <p className="kit-text">
             Tailored CV ready{status.generated_at ? `, made ${timeAgo(status.generated_at)}` : ''}.
           </p>
+          {status.keywords.length > 0 && (
+            <div className="kit-keywords">
+              <p>Tailored for</p>
+              <div className="chips">
+                {status.keywords.map((keyword) => (
+                  <span key={keyword} className="chip chip-plain">
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="kit-actions">
             <button type="button" className="kit-btn" onClick={() => setPreviewOpen(true)}>
               Preview CV

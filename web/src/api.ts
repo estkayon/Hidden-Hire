@@ -197,8 +197,8 @@ export type CvStatus = {
   exists: boolean
   generated_at: string | null
   flags: string[]
+  keywords: string[]
 }
-
 export function fetchCvStatus(jobId: string): Promise<CvStatus> {
   return getJson(`/api/jobs/${encodeURIComponent(jobId)}/cv`)
 }

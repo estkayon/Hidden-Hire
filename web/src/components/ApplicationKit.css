@@ -4,6 +4,19 @@
   color: var(--text-muted);
 }
 
+.kit-keywords {
+  margin: -4px 0 16px;
+}
+
+.kit-keywords p {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
 .kit-actions {
   display: flex;
   flex-direction: column;
