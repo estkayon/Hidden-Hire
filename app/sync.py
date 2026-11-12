@@ -1,4 +1,4 @@
-"""Pull the private data repo and import new jobs into the local database."""
+"""Pull the private data repo, import new jobs into the local database, then score them."""
 
 import json
 import logging
@@ -127,6 +127,18 @@ def import_health(session: Session, repo_dir: Path) -> int:
     return len(rows)
 
 
+def score_jobs() -> None:
+    """Stage 1 scoring after import. Needs requirements-ml.txt and an uploaded CV."""
+    try:
+        from app.scoring.run import run_scoring  # heavy ML import, only when installed
+    except ImportError:
+        log.warning("scoring skipped: install requirements-ml.txt")
+        return
+    scored = run_scoring()
+    if scored is not None:
+        log.info("scored %d jobs", scored)
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
@@ -156,6 +168,8 @@ def main() -> None:
         removed,
         runs,
     )
+
+    score_jobs()
 
 
 if __name__ == "__main__":

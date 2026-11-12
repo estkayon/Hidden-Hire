@@ -1,0 +1,4 @@
+# Local scoring only (not needed by the GitHub Actions fetcher)
+-r requirements.txt
+sentence-transformers==6.3.0
+torch==2.15.0
