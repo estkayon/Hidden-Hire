@@ -1,0 +1,300 @@
+"""Tailor the master CV to one job with an LLM, then fact-check every change."""
+
+import argparse
+import logging
+import re
+import unicodedata
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import yaml
+from pydantic import BaseModel, Field, ValidationError
+from rapidfuzz import fuzz, process
+
+from app.documents.cv import CvData, DocumentError, compile_pdf, load_master, render_tex
+from app.documents.factcheck import unsupported
+from app.llm.client import LLMError, complete
+from app.models import Job
+
+PROMPT = (
+    Path(__file__).resolve().parent.parent.parent
+    / "config"
+    / "prompts"
+    / "cv_tailor.md"
+)
+OPTIONAL_PROJECTS = 2
+MAX_EXPERIENCE_BULLETS = 4
+MAX_PROJECT_BULLETS = 3
+MAX_SUMMARY_CHARS = 700
+MAX_JOB_CHARS = 3500
+MIN_LENGTH_RATIO = 0.75  # a tailored item shorter than this has lost detail
+NAME_MATCH_SCORE = 90
+ODD_HYPHENS = str.maketrans({"\u2010": "-", "\u2011": "-", "\u2212": "-"})
+
+log = logging.getLogger("tailor")
+
+
+class PlanSkills(BaseModel):
+    name: str
+    items: list[str] = Field(default_factory=list)
+
+
+class PlanExperience(BaseModel):
+    index: int
+    bullets: list[str] = Field(default_factory=list)
+
+
+class PlanProject(BaseModel):
+    name: str
+    bullets: list[str] = Field(default_factory=list)
+
+
+class TailorPlan(BaseModel):
+    summary: str = ""
+    skills: list[PlanSkills] = Field(default_factory=list)
+    experience: list[PlanExperience] = Field(default_factory=list)
+    projects: list[PlanProject] = Field(default_factory=list)
+
+
+@dataclass
+class TailorResult:
+    cv: CvData
+    flags: list[str] = field(default_factory=list)
+
+
+def master_text(cv: CvData) -> str:
+    """All factual text of the master CV, used as the fact-check source."""
+    data = cv.model_dump(
+        include={"summary", "skills", "experience", "projects", "research", "education"}
+    )
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+
+
+def _master_for_llm(cv: CvData) -> str:
+    """Compact master CV without contact details or links."""
+    data = {
+        "summary": cv.summary,
+        "skills": [g.model_dump() for g in cv.skills],
+        "experience": [
+            {
+                "index": i,
+                "title": e.title,
+                "organization": e.organization,
+                "dates": e.dates,
+                "bullets": e.bullets,
+            }
+            for i, e in enumerate(cv.experience)
+        ],
+        "pinned_projects": [
+            {"name": p.name, "bullets": p.bullets} for p in cv.projects if p.pinned
+        ],
+        "optional_projects": [
+            {"name": p.name, "bullets": p.bullets} for p in cv.projects if not p.pinned
+        ],
+        "research": [{"title": r.title, "bullets": r.bullets} for r in cv.research],
+        "education": [
+            {"degree": e.degree, "institution": e.institution} for e in cv.education
+        ],
+    }
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+
+
+def build_messages(job: Job, cv: CvData) -> list[dict]:
+    system = PROMPT.read_text(encoding="utf-8").replace(
+        "{optional_count}", str(OPTIONAL_PROJECTS)
+    )
+    posting = f"Title: {job.title}\nCompany: {job.company}\n\n{job.description[:MAX_JOB_CHARS]}"
+    posting = posting.replace("</job_posting>", "").replace("<job_posting>", "")
+    user = f"Master CV (YAML):\n{_master_for_llm(cv)}\n<job_posting>\n{posting}\n</job_posting>"
+    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+
+def request_plan(job: Job, cv: CvData) -> TailorPlan:
+    """Raises LLMError when the call fails and ValueError for an unusable reply."""
+    raw = complete("documents", build_messages(job, cv), json_output=True)
+    try:
+        return TailorPlan.model_validate_json(raw)
+    except ValidationError as exc:
+        raise ValueError("invalid tailoring reply") from exc
+
+
+def _clean(text: str) -> str:
+    """Plain hyphens and single spaces, so the PDF font can show every character."""
+    return re.sub(r"\s+", " ", text.translate(ODD_HYPHENS)).strip()
+
+
+def _key(name: str) -> str:
+    return re.sub(
+        r"[^a-z0-9]+", " ", unicodedata.normalize("NFKC", name).lower()
+    ).strip()
+
+
+def _match[T](name: str, options: dict[str, T]) -> T | None:
+    """Find an item by name, tolerating hyphen, case and small spelling differences."""
+    keyed = {_key(key): value for key, value in options.items()}
+    found = process.extractOne(
+        _key(name), list(keyed), scorer=fuzz.ratio, score_cutoff=NAME_MATCH_SCORE
+    )
+    return keyed[found[0]] if found else None
+
+
+def _checked_bullets(
+    new: list[str],
+    original: list[str],
+    source: str,
+    limit: int,
+    label: str,
+    flags: list[str],
+) -> list[str]:
+    """Keep only supported bullets. Use the master bullets when the result has fewer or much shorter bullets."""
+    master = original[:limit]
+    kept = []
+    for bullet in [_clean(b) for b in new if b and b.strip()][:limit]:
+        issues = unsupported(bullet, source)
+        if issues:
+            flags.append(f"{label}: dropped a bullet ({', '.join(issues)})")
+        else:
+            kept.append(bullet)
+    if not kept:
+        return master
+    if len(kept) < len(master) or len(" ".join(kept)) < MIN_LENGTH_RATIO * len(
+        " ".join(master)
+    ):
+        flags.append(f"{label}: kept the master bullets (tailored version lost detail)")
+        return master
+    return kept
+
+
+def _skills(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
+    """Reordered master skills. Items not in the master are dropped, missing ones are kept at the end."""
+    groups = {g.name: g for g in master.skills}
+    ordered, seen_groups = [], set()
+    for planned in plan.skills:
+        group = _match(planned.name, groups)
+        if group is None or group.name in seen_groups:
+            continue
+        known = {item: item for item in group.items}
+        items = []
+        for item in planned.items:
+            match = _match(item, known)
+            if match is None:
+                flags.append(f"skills: dropped '{item}' (not in master CV)")
+            elif match not in items:
+                items.append(match)
+        items += [item for item in group.items if item not in items]
+        ordered.append(group.model_copy(update={"items": items}))
+        seen_groups.add(group.name)
+    return ordered + [g for g in master.skills if g.name not in seen_groups]
+
+
+def _projects(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
+    pinned = [p for p in master.projects if p.pinned]
+    optional = {p.name: p for p in master.projects if not p.pinned}
+    every = {p.name: p for p in master.projects}
+
+    planned, chosen = {}, []
+    for item in plan.projects:
+        project = _match(item.name, every)
+        if project is None:
+            flags.append(f"projects: ignored unknown project '{item.name}'")
+            continue
+        planned[project.name] = item
+        if (
+            project.name in optional
+            and project not in chosen
+            and len(chosen) < OPTIONAL_PROJECTS
+        ):
+            chosen.append(project)
+    for project in optional.values():
+        if len(chosen) >= OPTIONAL_PROJECTS:
+            break
+        if project not in chosen:
+            chosen.append(project)
+
+    result = []
+    for project in [*pinned, *chosen]:
+        source = f"{project.name}\n" + "\n".join(project.bullets)
+        new = planned.get(project.name)
+        bullets = _checked_bullets(
+            new.bullets if new else [],
+            project.bullets,
+            source,
+            MAX_PROJECT_BULLETS,
+            project.name,
+            flags,
+        )
+        result.append(project.model_copy(update={"bullets": bullets}))
+    return result
+
+
+def apply_plan(master: CvData, plan: TailorPlan) -> TailorResult:
+    """Build the tailored CV from the master, keeping only changes the master supports."""
+    flags: list[str] = []
+    source = master_text(master)
+
+    summary = _clean(plan.summary)[:MAX_SUMMARY_CHARS]
+    issues = unsupported(summary, source) if summary else ["empty"]
+    if issues:
+        flags.append(f"summary: kept the master summary ({', '.join(issues)})")
+        summary = master.summary
+
+    planned_experience = {e.index: e.bullets for e in plan.experience}
+    experience = []
+    for index, job in enumerate(master.experience):
+        job_source = f"{job.title}\n{job.organization}\n" + "\n".join(job.bullets)
+        bullets = _checked_bullets(
+            planned_experience.get(index, []),
+            job.bullets,
+            job_source,
+            MAX_EXPERIENCE_BULLETS,
+            job.title,
+            flags,
+        )
+        experience.append(job.model_copy(update={"bullets": bullets}))
+
+    cv = master.model_copy(
+        update={
+            "summary": summary,
+            "skills": _skills(master, plan, flags),
+            "experience": experience,
+            "projects": _projects(master, plan, flags),
+        }
+    )
+    return TailorResult(cv=cv, flags=flags)
+
+
+def generate_cv(job: Job) -> tuple[Path, list[str]]:
+    """Tailored CV PDF for one job. Raises LLMError, ValueError or DocumentError."""
+    master = load_master()
+    result = apply_plan(master, request_plan(job, master))
+    pdf = compile_pdf(render_tex(result.cv), name=f"cv_{job.id}")
+    return pdf, result.flags
+
+
+def main() -> None:
+    from app.db import SessionLocal
+
+    parser = argparse.ArgumentParser(description="Generate a tailored CV for one job.")
+    parser.add_argument("job_id")
+    args = parser.parse_args()
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
+    )
+    for noisy in ("httpx", "httpx2", "LiteLLM"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+    with SessionLocal() as session:
+        job = session.get(Job, args.job_id)
+        if job is None:
+            raise SystemExit("Job not found")
+        try:
+            pdf, flags = generate_cv(job)
+        except (LLMError, ValueError, DocumentError) as exc:
+            raise SystemExit(f"CV generation failed: {exc}") from exc
+    print(f"Wrote {pdf}")
+    for flag in flags:
+        print(f"- {flag}")
+
+
+if __name__ == "__main__":
+    main()

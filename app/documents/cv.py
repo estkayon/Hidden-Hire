@@ -62,6 +62,7 @@ class Experience(BaseModel):
 
 class Project(BaseModel):
     name: str
+    pinned: bool = False  # always shown first in tailored CVs
     links: list[Link] = Field(default_factory=list)
     bullets: list[str]
 

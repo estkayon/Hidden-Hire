@@ -9,3 +9,5 @@ llm:
     pause_seconds: 30 # Groq free tier: 8K tokens per minute for this model
   documents:
     model: groq/openai/gpt-oss-120b
+    max_tokens: 3000
+    reasoning_effort: low
