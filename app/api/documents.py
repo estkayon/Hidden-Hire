@@ -21,6 +21,7 @@ class CvStatus(BaseModel):
     exists: bool
     generated_at: datetime | None
     flags: list[str]
+    keywords: list[str]
 
 
 def _job_or_404(job_id: str, session) -> Job:

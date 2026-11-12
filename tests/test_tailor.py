@@ -90,9 +90,12 @@ def test_invented_facts_fall_back_to_master():
     )
     result = apply_plan(MASTER, plan)
     assert result.cv.summary == MASTER.summary
-    assert result.cv.experience[0].bullets == MASTER.experience[0].bullets
+    assert result.cv.experience[0].bullets == [
+        "Built 3 internal apps with Python.",
+        "Wrote SQL reports for managers.",
+    ]
     assert result.cv.projects[0].bullets == ["Reached 5.68% MAPE with Python."]
-    assert len(result.flags) == 5
+    assert len(result.flags) == 4
 
 
 def test_shorter_bullets_keep_master_detail():
@@ -139,6 +142,16 @@ def test_project_names_match_despite_odd_hyphens_and_typos():
         "Achieved 5.68% MAPE in forecasting with Python."
     ]
     assert not [flag for flag in result.flags if "project" in flag or "Pinned" in flag]
+
+
+def test_role_type_picks_projects_by_track():
+    master = MASTER.model_copy(deep=True)
+    master.projects[2].tracks = ["ml"]
+    master.projects[3].tracks = ["software", "frontend"]
+    master.projects[4].tracks = ["software"]
+    plan = TailorPlan(role_type="Software", optional_projects=["Option C"])
+    result = apply_plan(master, plan)
+    assert [p.name for p in result.cv.projects][2:] == ["Option D", "Option E"]
 
 
 def test_stack_allows_real_tools_in_bullets():

@@ -66,6 +66,9 @@ class Experience(BaseModel):
 class Project(BaseModel):
     name: str
     pinned: bool = False  # always shown first in tailored CVs
+    tracks: list[str] = Field(
+        default_factory=list
+    )  # job kinds an optional project is chosen for
     links: list[Link] = Field(default_factory=list)
     stack: list[str] = Field(
         default_factory=list

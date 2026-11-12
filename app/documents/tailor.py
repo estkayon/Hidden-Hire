@@ -60,6 +60,7 @@ class PlanProject(BaseModel):
 
 
 class TailorPlan(BaseModel):
+    role_type: str = ""
     keywords: list[str] = Field(default_factory=list)
     optional_projects: list[str] = Field(default_factory=list)
     summary: str = ""
@@ -168,15 +169,21 @@ def _checked_bullets(
     label: str,
     flags: list[str],
 ) -> list[str]:
-    """Keep only supported bullets. Use the master bullets when the result has fewer or much shorter bullets."""
+    """Keep supported bullets; an unsupported one is replaced by the master bullet in the same place.
+    Use all master bullets when the result has fewer or much shorter bullets."""
     master = original[:limit]
     kept = []
-    for bullet in [_clean(b) for b in new if b and b.strip()][:limit]:
+    for index, bullet in enumerate([_clean(b) for b in new if b and b.strip()][:limit]):
         issues = unsupported(bullet, source)
-        if issues:
-            flags.append(f"{label}: dropped a bullet ({', '.join(issues)})")
-        else:
+        if not issues:
             kept.append(bullet)
+        elif index < len(master):
+            flags.append(
+                f"{label}: used the master version of a bullet ({', '.join(issues)})"
+            )
+            kept.append(master[index])
+        else:
+            flags.append(f"{label}: dropped a bullet ({', '.join(issues)})")
     if not kept:
         return master
     if len(kept) < len(master) or len(" ".join(kept)) < MIN_LENGTH_RATIO * len(
@@ -225,7 +232,8 @@ def _projects(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
         else:
             planned[project.name] = item
 
-    chosen = []
+    role_type = plan.role_type.strip().lower()
+    chosen = [p for p in optional.values() if role_type in p.tracks][:OPTIONAL_PROJECTS]
     for name in plan.optional_projects or [item.name for item in plan.projects]:
         project = _match(name, optional)
         if (
