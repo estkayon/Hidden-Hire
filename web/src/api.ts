@@ -22,15 +22,21 @@ export type Job = {
   match: number | null
 }
 
-export type ScoreBreakdown = {
-  skills: number
-  semantic: number
-  role: number
-  seniority: number
-  location: number
-  matched_skills: string[]
-  missing_skills: string[]
+export type Dimension = { score: number; reason: string }
+
+export type RecruiterView = {
+  skills: Dimension
+  experience: Dimension
+  eligibility: Dimension
+  domain: Dimension
+  education: Dimension
+  strengths: string[]
+  gaps: string[]
+  blockers: string[]
+  summary: string
+  total: number
 }
+
 export type JobList = {
   total: number
   jobs: Job[]
@@ -42,7 +48,7 @@ export type JobDetail = Job & {
   apply_url: string | null
   apply_email: string | null
   tags: string[]
-  score_breakdown: ScoreBreakdown | null
+  recruiter_view: RecruiterView | null
 }
 
 export type PasteInput = {
@@ -170,6 +176,10 @@ async function sendJson<T>(url: string, method: string, body?: unknown): Promise
   })
   if (!response.ok) throw new Error(await errorMessage(response))
   return response.json()
+}
+
+export function requestRecruiterView(jobId: string): Promise<JobDetail> {
+  return sendJson(`/api/jobs/${encodeURIComponent(jobId)}/recruiter-view`, 'POST')
 }
 
 export function fetchProfile(): Promise<ProfileState> {

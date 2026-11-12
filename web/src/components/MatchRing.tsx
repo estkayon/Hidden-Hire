@@ -3,7 +3,7 @@ import { useId } from 'react'
 const RADIUS = 44
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-function band(match: number): 'great' | 'good' | 'fair' | 'weak' {
+export function band(match: number): 'great' | 'good' | 'fair' | 'weak' {
   if (match >= 85) return 'great'
   if (match >= 70) return 'good'
   if (match >= 55) return 'fair'

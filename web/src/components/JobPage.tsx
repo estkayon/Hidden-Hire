@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchJob, type Job, type JobDetail } from '../api'
+import { fetchJob, requestRecruiterView, type Job, type JobDetail } from '../api'
 import { countryName } from '../countries'
 import {
   WORK_TYPE_LABEL,
@@ -11,6 +11,7 @@ import {
   timeAgo,
 } from '../format'
 import { Description } from './Description'
+import { RecruiterCard, RecruiterModal } from './RecruiterView'
 
 type Props = {
   jobId: string
@@ -28,12 +29,17 @@ function parseAlsoSeen(entries: string[]): { source: string; url: string }[] {
 export function JobPage({ jobId, onToggleSave }: Props) {
   const [job, setJob] = useState<JobDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [judging, setJudging] = useState(false)
+  const [judgeError, setJudgeError] = useState<string | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
     window.scrollTo({ top: 0 })
     setJob(null)
     setError(null)
+    setJudgeError(null)
+    setDetailsOpen(false)
     fetchJob(jobId, controller.signal)
       .then(setJob)
       .catch((err: Error) => {
@@ -84,6 +90,19 @@ export function JobPage({ jobId, onToggleSave }: Props) {
     if (!job) return
     onToggleSave(job)
     setJob({ ...job, saved: !job.saved })
+  }
+
+  async function getRecruiterView() {
+    if (!job) return
+    setJudging(true)
+    setJudgeError(null)
+    try {
+      setJob(await requestRecruiterView(job.id))
+    } catch (err) {
+      setJudgeError((err as Error).message)
+    } finally {
+      setJudging(false)
+    }
   }
 
   return (
@@ -146,8 +165,6 @@ export function JobPage({ jobId, onToggleSave }: Props) {
             </button>
           </div>
 
-          {/* {job.match !== null && <MatchCard match={job.match} breakdown={job.score_breakdown} />} */}
-
           <div className="side-card">
             <p className="eyebrow">Overview</p>
             <dl className="facts">
@@ -159,6 +176,16 @@ export function JobPage({ jobId, onToggleSave }: Props) {
               ))}
             </dl>
           </div>
+
+          {(job.recruiter_view || job.match !== null) && (
+            <RecruiterCard
+              view={job.recruiter_view}
+              judging={judging}
+              error={judgeError}
+              onRequest={getRecruiterView}
+              onOpen={() => setDetailsOpen(true)}
+            />
+          )}
 
           {alsoSeen.length > 0 && (
             <div className="side-card">
@@ -177,6 +204,10 @@ export function JobPage({ jobId, onToggleSave }: Props) {
           )}
         </aside>
       </div>
+
+      {detailsOpen && job.recruiter_view && (
+        <RecruiterModal view={job.recruiter_view} onClose={() => setDetailsOpen(false)} />
+      )}
     </div>
   )
 }

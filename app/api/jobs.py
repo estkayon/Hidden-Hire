@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.models import Application, Job, Score
-from app.profile import has_cv
+from app.profile import cv_text, has_cv, load_profile
 from app.sync import naive_utc, to_row
 from fetcher.models import Job as JobRecord
 from fetcher.models import make_job_id
@@ -58,7 +58,7 @@ class JobDetail(JobSummary):
     apply_url: str | None
     apply_email: str | None
     tags: list[str]
-    score_breakdown: dict | None
+    recruiter_view: dict | None
 
 
 class JobList(BaseModel):
@@ -100,10 +100,11 @@ def _to_model[T: JobSummary](
     data["match"] = (
         round(score.final_score) if score and score.final_score is not None else None
     )
-    if "score_breakdown" in model.model_fields:
-        data["score_breakdown"] = (
-            (score.breakdown or {}).get("stage1") if score else None
+    if "recruiter_view" in model.model_fields:
+        data["recruiter_view"] = (
+            (score.breakdown or {}).get("stage2") if score else None
         )
+
     if HTML_TAG.search(data.get("description") or ""):
         data["description"] = html_to_text(
             data["description"]
@@ -235,6 +236,34 @@ def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
     session.add(row)
     session.commit()
     return _to_model(row, JobDetail, now, saved=False, score=None)
+
+
+@router.post("/{job_id}/recruiter-view", response_model=JobDetail)
+def create_recruiter_view(job_id: str, session: SessionDep) -> JobDetail:
+    """Run the Stage 2 (LLM) judgment for one job the owner picked."""
+    from app.llm.client import LLMError  # LLM packages load only when used
+    from app.scoring import llm_score
+
+    job = session.get(Job, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    profile, cv = load_profile(), cv_text()
+    if profile is None or cv is None:
+        raise HTTPException(status_code=409, detail="Upload your CV first.")
+    try:
+        total, details = llm_score.judge(job, profile, cv)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502, detail="The model gave an unusable answer. Try again."
+        ) from exc
+    except LLMError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is busy or unavailable. Try again in a minute.",
+        ) from exc
+    llm_score.save_judgment(session, job.id, total, details)
+    session.commit()
+    return get_job(job_id, session)
 
 
 @router.get("/{job_id}", response_model=JobDetail)

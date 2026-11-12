@@ -131,6 +131,27 @@ def test_match_filters_need_a_cv(client, monkeypatch, tmp_path):
     assert [j["id"] for j in by_match["jobs"]] == ["new", "week"]
 
 
+def test_recruiter_view_on_request(client, monkeypatch, tmp_path):
+    from app import profile as store
+    from app.scoring import llm_score
+
+    monkeypatch.setattr(store, "PROFILE_DIR", tmp_path)
+    assert client.post("/api/jobs/new/recruiter-view").status_code == 409
+
+    store.save_profile(store.Profile(skills=["Python"]))
+    (tmp_path / "cv.txt").write_text("cv", encoding="utf-8")
+    details = {"total": 77, "summary": "Good fit.", "blockers": []}
+    monkeypatch.setattr(llm_score, "judge", lambda job, profile, cv: (77, details))
+    monkeypatch.setattr(
+        llm_score, "load_settings", lambda: {"scoring": {"model": "test/model"}}
+    )
+
+    job = client.post("/api/jobs/new/recruiter-view").json()
+    assert job["match"] == 77
+    assert job["recruiter_view"]["summary"] == "Good fit."
+    assert client.post("/api/jobs/missing/recruiter-view").status_code == 404
+
+
 def test_job_detail_and_404(client):
     assert client.get("/api/jobs/new").json()["title"] == "ML Engineer"
     assert client.get("/api/jobs/missing").status_code == 404
