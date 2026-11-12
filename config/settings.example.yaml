@@ -1,0 +1,8 @@
+# Copy to config/settings.yaml (git-ignored) to change models.
+# Model strings use LiteLLM's "provider/model" format; API keys come from .env.
+llm:
+  timeout_seconds: 60
+  scoring:
+    model: groq/openai/gpt-oss-20b
+  documents:
+    model: groq/openai/gpt-oss-120b

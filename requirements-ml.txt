@@ -2,3 +2,4 @@
 -r requirements.txt
 sentence-transformers==6.3.0
 torch==2.15.0
+litellm==1.109.1
