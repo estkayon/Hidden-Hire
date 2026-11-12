@@ -1,0 +1,191 @@
+((# Single-column, ATS-friendly CV. All values are escaped by the renderer. #))
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[a4paper,top=0.5in,bottom=0.5in,left=0.6in,right=0.6in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{microtype}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\linespread{1.02}
+\urlstyle{same}
+
+\definecolor{sectioncolor}{RGB}{25,25,25}
+\definecolor{linkcolor}{RGB}{15,60,120}
+\definecolor{mutedcolor}{RGB}{70,70,70}
+
+\hypersetup{
+    colorlinks=true,
+    urlcolor=linkcolor,
+    linkcolor=linkcolor,
+    pdfauthor={((( cv.header.name )))},
+    pdftitle={((( cv.header.name ))) - CV}
+}
+
+% Section title with a thin rule under it
+\renewcommand{\section}[1]{%
+  \par\vspace{7pt}%
+  {\large\bfseries\color{sectioncolor}\MakeUppercase{#1}}\par\vspace{-2pt}%
+  {\color{sectioncolor}\rule{\textwidth}{0.5pt}}\par\vspace{4pt}%
+}
+
+\newenvironment{cvitemize}{%
+  \begin{list}{\textbullet}{%
+    \setlength{\leftmargin}{14pt}%
+    \setlength{\labelsep}{6pt}%
+    \setlength{\itemsep}{1.8pt}%
+    \setlength{\topsep}{2.5pt}%
+    \setlength{\parsep}{0pt}%
+    \setlength{\partopsep}{0pt}%
+  }%
+}{%
+  \end{list}%
+}
+
+% Title and date on the first line, organization and location on the second
+\newcommand{\resumeSubheading}[4]{%
+    \textbf{#1} \hfill \textbf{#2}\par\vspace{1pt}%
+    \textit{#3} \hfill \textit{#4}\par
+    \vspace{2pt}%
+}
+
+% Project name on the left, links on the right
+\newcommand{\projectHeading}[2]{%
+    \textbf{#1} \hfill #2\par
+    \vspace{2pt}%
+}
+
+\newcommand{\entrygap}{\vspace{6pt}}
+
+\begin{document}
+
+((* set h = cv.header *))
+\begin{center}
+    {\LARGE \textbf{((( h.name )))}}\par\vspace{6pt}
+    ((* for part in [h.location, h.phone] | select *))((( part )))((* if not loop.last or h.email *)) \quad|\quad ((* endif *))((* endfor *))((* if h.email *))\href{((( ('mailto:' ~ h.email) | url )))}{((( h.email )))}((* endif *))\par\vspace{3pt}
+    ((* for link in h.links *))\href{((( link.url | url )))}{((( link.url | display_url )))}((* if not loop.last *)) \quad|\quad ((* endif *))((* endfor *))
+
+\end{center}
+
+((* if cv.summary *))
+\section{Professional Summary}
+((( cv.summary )))
+
+((* endif *))
+((* if cv.skills *))
+\section{Technical Skills}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+((* for group in cv.skills *))
+\textbf{((( group.name ))):} & ((( group.items | join(', ') )))((* if not loop.last *)) \\((* endif *))
+
+((* endfor *))
+\end{tabularx}
+\renewcommand{\arraystretch}{1.0}
+((* endif *))
+((* if cv.experience *))
+\section{Professional Experience}
+((* for job in cv.experience *))
+\resumeSubheading{((( job.title )))}{((( job.dates )))}{((( job.organization )))}{((( job.location )))}
+\begin{cvitemize}
+((* for bullet in job.bullets *))
+    \item ((( bullet )))
+((* endfor *))
+\end{cvitemize}
+((* if not loop.last *))\entrygap((* endif *))
+
+((* endfor *))
+((* endif *))
+((* if cv.projects *))
+\section{Projects}
+((* for project in cv.projects *))
+\begin{minipage}{\textwidth}
+\projectHeading{((( project.name )))}{((* for link in project.links *))\href{((( link.url | url )))}{((( link.label )))}((* if not loop.last *)) \;|\; ((* endif *))((* endfor *))}
+\begin{cvitemize}
+((* for bullet in project.bullets *))
+    \item ((( bullet )))
+((* endfor *))
+\end{cvitemize}
+\end{minipage}
+((* if not loop.last *))\par\entrygap((* endif *))
+
+((* endfor *))
+((* endif *))
+((* if cv.research *))
+\section{Research Experience}
+((* for item in cv.research *))
+\begin{minipage}{\textwidth}
+\projectHeading{((( item.title )))}{((* for link in item.links *))\href{((( link.url | url )))}{((( link.label )))}((* if not loop.last *)) \;|\; ((* endif *))((* endfor *))}
+((* if item.subtitle *))
+\textit{((( item.subtitle )))}\par\vspace{1pt}
+((* endif *))
+((* if item.tools *))
+{\color{mutedcolor}Tools: ((( item.tools )))}\par\vspace{1pt}
+((* endif *))
+\begin{cvitemize}
+((* for bullet in item.bullets *))
+    \item ((( bullet )))
+((* endfor *))
+\end{cvitemize}
+\end{minipage}
+((* if not loop.last *))\par\entrygap((* endif *))
+
+((* endfor *))
+((* endif *))
+((* if cv.education *))
+\section{Education}
+((* for edu in cv.education *))
+\resumeSubheading{((( edu.degree )))}{((( edu.dates )))}{((( edu.institution )))((* if edu.grade *)) \;|\; \textbf{((( edu.grade )))}((* endif *))}{((( edu.location )))}
+((* if not loop.last *))\vspace{5pt}((* endif *))
+
+((* endfor *))
+((* endif *))
+((* if cv.certifications *))
+\section{Certifications}
+\begin{cvitemize}
+((* for cert in cv.certifications *))
+    \item \textbf{((( cert.name )))}((* if cert.issuer *)) -- ((( cert.issuer )))((* endif *))((* if cert.url *)) \;|\; \href{((( cert.url | url )))}{View}((* endif *))
+
+((* endfor *))
+\end{cvitemize}
+
+((* endif *))
+((* if cv.volunteering *))
+\section{Volunteering}
+((* for item in cv.volunteering *))
+\projectHeading{((( item.name )))((* if item.url *)) \;\textnormal{|\; \href{((( item.url | url )))}{View}}((* endif *))}{\textbf{((( item.date )))}}
+((* if item.bullets *))
+\begin{cvitemize}
+((* for bullet in item.bullets *))
+    \item ((( bullet )))
+((* endfor *))
+\end{cvitemize}
+((* endif *))
+((* if not loop.last *))\entrygap((* endif *))
+
+((* endfor *))
+((* endif *))
+((* if cv.references *))
+\section{References}
+((* for ref in cv.references *))
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{((( ref.name )))}\par\vspace{2pt}
+((* for line in ref.lines *))
+((( line )))\par
+((* endfor *))
+((* if ref.phone *))
+Phone: ((( ref.phone )))\par
+((* endif *))
+((* if ref.email *))
+Email: \href{((( ('mailto:' ~ ref.email) | url )))}{((( ref.email )))}
+((* endif *))
+\end{minipage}
+((* if not loop.last *))\hfill((* endif *))
+((* endfor *))
+
+((* endif *))
+\end{document}
