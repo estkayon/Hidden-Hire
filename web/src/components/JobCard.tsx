@@ -1,4 +1,5 @@
 import type { Job } from '../api'
+import { eligibilityInfo } from '../eligibility'
 import { WORK_TYPE_LABEL, formatSalary, placeLabel, timeAgo } from '../format'
 import './JobCard.css'
 import { MatchRing } from './MatchRing'
@@ -10,7 +11,11 @@ type Props = {
   onToggleSave: (job: Job) => void
 }
 
-function Icon({ name }: { name: 'onsite' | 'remote' | 'hybrid' | 'level' | 'salary' | 'clock' | 'pin' }) {
+function Icon({
+  name,
+}: {
+  name: 'onsite' | 'remote' | 'hybrid' | 'level' | 'salary' | 'clock' | 'pin' | 'good' | 'maybe' | 'no'
+}) {
   const paths = {
     onsite: 'M4 21V5l7-2v18M11 21h9V9l-9-2M7 8h1M7 12h1M7 16h1M14 12h3M14 16h3',
     remote: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z',
@@ -19,6 +24,9 @@ function Icon({ name }: { name: 'onsite' | 'remote' | 'hybrid' | 'level' | 'sala
     salary: 'M3 7h18v10H3zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 10v4M18 10v4',
     clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
     pin: 'M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12zM12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+    good: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8 12.5l2.7 2.7L16 9.8',
+    maybe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7.5v5.5M12 16.5v.01',
+    no: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6',
   }
   return (
     <svg className="jc-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -31,6 +39,7 @@ export function JobCard({ job, index, onOpen, onToggleSave }: Props) {
   const salary = formatSalary(job)
   const workType = WORK_TYPE_LABEL[job.work_type]
   const workIcon = job.work_type === 'remote' ? 'remote' : job.work_type === 'hybrid' ? 'hybrid' : 'onsite'
+  const elig = eligibilityInfo(job)
 
   return (
     <article className="card job-card" style={{ animationDelay: `${Math.min(index, 10) * 40}ms` }}>
@@ -66,6 +75,10 @@ export function JobCard({ job, index, onOpen, onToggleSave }: Props) {
         <div className="jc-main">
           <h2 className="jc-title">{job.title}</h2>
           <div className="jc-chips">
+            <span className={`jc-chip is-elig is-${elig.tone}`}>
+              <Icon name={elig.tone} />
+              {elig.label}
+            </span>
             {workType && (
               <span className="jc-chip is-work">
                 <Icon name={workIcon} />

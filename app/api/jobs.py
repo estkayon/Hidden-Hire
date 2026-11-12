@@ -10,6 +10,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
+from app.eligibility import Eligibility, eligibility
 from app.models import Application, Job, Score
 from app.profile import cv_text, has_cv, load_profile
 from app.sync import naive_utc, to_row
@@ -50,6 +51,7 @@ class JobSummary(BaseModel):
     country_tier: int
     saved: bool
     match: int | None
+    eligibility: Eligibility
 
 
 class JobDetail(JobSummary):
@@ -97,6 +99,7 @@ def _to_model[T: JobSummary](
     data["is_new"] = now - seen_at <= timedelta(hours=NEW_HOURS)
     data["country_tier"] = country_tier(job.country)
     data["saved"] = saved
+    data["eligibility"] = eligibility(job)
     data["match"] = (
         round(score.final_score) if score and score.final_score is not None else None
     )

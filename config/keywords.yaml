@@ -126,3 +126,35 @@ senior_titles:
   - vice president
   - chief
   - manager
+
+# Eligibility from Bangladesh (checked on onsite or hybrid jobs abroad).
+# Denials are checked first, because "no visa sponsorship" also contains "visa sponsorship".
+visa_denied:
+  - no visa sponsorship
+  - not offer visa sponsorship
+  - not provide visa sponsorship
+  - unable to sponsor
+  - not able to sponsor
+  - cannot sponsor
+  - can't sponsor
+  - will not sponsor
+  - does not sponsor
+  - sponsorship is not available
+  - sponsorship not available
+  - must have the right to work
+  - right to work in the
+  - must be eligible to work in
+  - must be authorized to work in
+  - local candidates only
+visa_support:
+  - visa sponsorship
+  - sponsor your visa
+  - sponsor visas
+  - visa support
+  - visa assistance
+  - work permit support
+  - relocation support
+  - relocation package
+  - relocation assistance
+  - relocation bonus
+  - help you relocate

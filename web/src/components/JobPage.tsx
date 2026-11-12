@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { fetchJob, requestRecruiterView, type Job, type JobDetail } from '../api'
 import { countryName } from '../countries'
+import { eligibilityInfo } from '../eligibility'
 import {
   WORK_TYPE_LABEL,
   formatSalary,
@@ -98,6 +99,7 @@ export function JobPage({ jobId, onToggleSave }: Props) {
     ['Company', job.company],
     ['Country', job.country ? countryName(job.country) : null],
     ['Work type', workType ?? null],
+    ['From Bangladesh', eligibilityInfo(job).label],
     ['Level', job.seniority],
     ['Salary', salary],
     ['Posted', job.posted_at ? new Date(job.posted_at).toLocaleDateString() : null],

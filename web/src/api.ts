@@ -20,7 +20,18 @@ export type Job = {
   country_tier: number
   saved: boolean
   match: number | null
+  eligibility: Eligibility
 }
+
+export type Eligibility =
+  | 'bd'
+  | 'remote_worldwide'
+  | 'remote_regions'
+  | 'remote_unknown'
+  | 'remote_country'
+  | 'visa'
+  | 'local_only'
+  | 'check_visa'
 
 export type Dimension = { score: number; reason: string }
 

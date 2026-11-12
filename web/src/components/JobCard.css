@@ -202,6 +202,24 @@
   border: 1px solid var(--jc-line);
 }
 
+.jc-chip.is-elig {
+  font-weight: 600;
+}
+
+.jc-chip.is-elig.is-good {
+  background: rgb(60 154 107 / 0.14);
+  color: #1c6b47;
+}
+
+.jc-chip.is-elig.is-maybe {
+  background: rgb(242 204 77 / 0.22);
+  color: #7a5a06;
+}
+
+.jc-chip.is-elig.is-no {
+  background: rgb(239 122 111 / 0.15);
+  color: #9e3530;
+}
 /* Footer */
 .jc-foot {
   display: flex;
