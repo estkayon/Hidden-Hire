@@ -3,15 +3,12 @@
 import argparse
 import json
 import logging
-import re
-import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, Field, ValidationError
-from rapidfuzz import fuzz, process
 
 from app.documents.cv import (
     OUTPUT_DIR,
@@ -22,6 +19,8 @@ from app.documents.cv import (
     render_tex,
 )
 from app.documents.factcheck import unsupported
+from app.documents.textutil import clean as _clean
+from app.documents.textutil import match as _match
 from app.llm.client import LLMError, complete
 from app.models import Job
 
@@ -38,8 +37,6 @@ MAX_SUMMARY_CHARS = 700
 MAX_JOB_CHARS = 3500
 MAX_KEYWORDS = 10
 MIN_LENGTH_RATIO = 0.75  # a tailored item shorter than this has lost detail
-NAME_MATCH_SCORE = 90
-ODD_HYPHENS = str.maketrans({"\u2010": "-", "\u2011": "-", "\u2212": "-"})
 
 log = logging.getLogger("tailor")
 
@@ -137,30 +134,6 @@ def request_plan(job: Job, cv: CvData) -> TailorPlan:
         raise ValueError("invalid tailoring reply") from exc
 
 
-def _clean(text: str) -> str:
-    """Plain hyphens and single spaces, so the PDF font can show every character."""
-    return re.sub(r"\s+", " ", text.translate(ODD_HYPHENS)).strip()
-
-
-def _key(name: str) -> str:
-    return re.sub(
-        r"[^a-z0-9]+", " ", unicodedata.normalize("NFKC", name).lower()
-    ).strip()
-
-
-def _match[T](name: str, options: dict[str, T]) -> T | None:
-    """Find an item by its full or short name (the part before a dash), tolerating small differences."""
-    keyed = {}
-    for key, value in options.items():
-        keyed[_key(key)] = value
-        short = re.split(r"\s[–-]\s", key, maxsplit=1)[0]
-        keyed.setdefault(_key(short), value)
-    found = process.extractOne(
-        _key(name), list(keyed), scorer=fuzz.ratio, score_cutoff=NAME_MATCH_SCORE
-    )
-    return keyed[found[0]] if found else None
-
-
 def _checked_bullets(
     new: list[str],
     original: list[str],
@@ -219,7 +192,7 @@ def _skills(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
 
 
 def _projects(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
-    """Pinned projects first, then the optional projects the model chose, each fact-checked."""
+    """Pinned projects first, then optional projects for this kind of role, each fact-checked."""
     pinned = [p for p in master.projects if p.pinned]
     optional = {p.name: p for p in master.projects if not p.pinned}
     every = {p.name: p for p in master.projects}

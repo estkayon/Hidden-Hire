@@ -36,6 +36,7 @@ def complete(
     json_output: bool = False,
     model: str | None = None,
     temperature: float = 0.2,
+    max_tokens: int | None = None,
 ) -> str:
     """Text of the model's reply. Raises LLMError so callers can fall back cleanly."""
     settings = load_settings()
@@ -45,6 +46,8 @@ def complete(
         for key in ("max_tokens", "reasoning_effort")
         if key in task_settings
     }
+    if max_tokens is not None:
+        optional["max_tokens"] = max_tokens
     try:
         response = litellm.completion(
             model=model or task_settings["model"],
