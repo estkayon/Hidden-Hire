@@ -125,7 +125,7 @@ def draft_to_yaml(draft: CvDraft) -> str:
 
 
 def parse_draft(text: str) -> CvDraft:
-    """The reviewed YAML from the owner. Raises ValueError with a readable reason."""
+    """The reviewed draft YAML. Raises ValueError with a readable reason."""
     try:
         return CvDraft.model_validate(yaml.safe_load(text) or {})
     except yaml.YAMLError as exc:

@@ -9,6 +9,7 @@ import {
   type ProfileState,
 } from '../api'
 import { ChipInput } from './ChipInput'
+import { MasterBuilder } from './MasterBuilder'
 
 type Draft = {
   personal: PersonalInfo
@@ -173,7 +174,10 @@ export function ProfilePage({ onStateChange }: { onStateChange: (state: ProfileS
       {message && <p className={`toast is-${message.kind}`}>{message.text}</p>}
 
       {!state.has_cv || !draft ? (
-        <UploadZone busy={busy} onFile={onFile} />
+        <>
+          <UploadZone busy={busy} onFile={onFile} />
+          <MasterBuilder hasCv={false} />
+        </>
       ) : (
         <>
           <section className="cv-row">
@@ -267,6 +271,8 @@ export function ProfilePage({ onStateChange }: { onStateChange: (state: ProfileS
               </section>
             </div>
           </div>
+
+          <MasterBuilder hasCv />
 
           <div className="save-bar">
             <p>Changes are saved only on this computer.</p>

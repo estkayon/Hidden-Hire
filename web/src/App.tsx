@@ -20,6 +20,7 @@ import { ListBar } from './components/ListBar'
 import { Logo } from './components/Logo'
 import { Pagination } from './components/Pagination'
 import { PasteJobModal } from './components/PasteJobModal'
+import { CvEditorPage } from './components/CvEditorPage'
 import { ProfilePage } from './components/ProfilePage'
 import { useDebouncedValue } from './hooks'
 import './App.css'
@@ -29,6 +30,7 @@ type Route =
   | { view: 'job'; jobId: string }
   | { view: 'sources' }
   | { view: 'profile' }
+  | { view: 'cv' }
 
 function routeFromHash(): Route {
   const hash = window.location.hash
@@ -36,6 +38,7 @@ function routeFromHash(): Route {
   if (job) return { view: 'job', jobId: decodeURIComponent(job[1]) }
   if (hash === '#/sources') return { view: 'sources' }
   if (hash === '#/profile') return { view: 'profile' }
+  if (hash === '#/cv') return { view: 'cv' }
   return { view: 'list' }
 }
 
@@ -178,7 +181,7 @@ export default function App() {
           </button>
           <button
             type="button"
-            className={`nav-avatar${route.view === 'profile' ? ' active' : ''}`}
+            className={`nav-avatar${route.view === 'profile' || route.view === 'cv' ? ' active' : ''}`}
             aria-label="Profile"
             title="Profile"
             onClick={() => navigate('/profile')}
@@ -210,9 +213,20 @@ export default function App() {
       )}
       {route.view === 'sources' && <HealthPage />}
       {route.view === 'profile' && <ProfilePage onStateChange={(state) => setHasCv(state.has_cv)} />}
+      {route.view === 'cv' && <CvEditorPage />}
 
       {onList && (
         <div className="list-tools">
+          {(filters.savedOnly || filters.appliedOnly) && (
+            <button
+              type="button"
+              className="back-btn"
+              onClick={() => updateFilters({ savedOnly: false, appliedOnly: false })}
+            >
+              <span aria-hidden="true">←</span>
+              All jobs
+            </button>
+          )}
           <button
             type="button"
             className="clear-btn"

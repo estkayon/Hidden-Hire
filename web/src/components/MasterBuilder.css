@@ -1,0 +1,142 @@
+.mb-card {
+  margin-top: 20px;
+}
+
+.mb-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgb(169 224 241 / 0.3);
+  font-size: 0.9rem;
+}
+
+.mb-edit {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--teal);
+  color: var(--mist);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 220ms var(--ease);
+}
+
+.mb-edit:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.mb-master {
+  min-height: 560px;
+}
+
+.mb-saved {
+  margin: 12px 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1c6b47;
+}
+
+.mb-input {
+  width: 100%;
+  min-height: 200px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--mist);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.93rem;
+  line-height: 1.55;
+  resize: vertical;
+  transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+}
+
+.mb-input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgb(169 224 241 / 0.6);
+}
+
+.mb-yaml {
+  min-height: 320px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.85rem;
+  white-space: pre;
+}
+
+.mb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.mb-count {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.mb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.mb-label {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.mb-flags,
+.mb-report {
+  margin: 0 0 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+}
+
+.mb-flags {
+  background: rgb(242 204 77 / 0.18);
+  border: 1px solid rgb(201 154 22 / 0.3);
+}
+
+.mb-report {
+  margin-top: 16px;
+  background: rgb(202 255 166 / 0.4);
+  border: 1px solid var(--meadow);
+}
+
+.mb-flags p,
+.mb-report p {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.mb-flags ul,
+.mb-report ul {
+  margin: 0;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+.mb-hint {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+
+.mb-error {
+  margin: 12px 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #b23b35;
+}

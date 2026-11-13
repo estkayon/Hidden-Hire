@@ -1,8 +1,9 @@
-"""Master CV builder: draft entries from notes or the uploaded CV, then merge the reviewed YAML."""
+"""Master CV builder: draft entries from notes or the uploaded CV, merge them, and edit the whole CV."""
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.documents.cv import CvData
 from app.profile import cv_text
 
 router = APIRouter(prefix="/api/master", tags=["master"])
@@ -86,3 +87,31 @@ def merge_draft(body: MergeRequest) -> MergeResult:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     save_master(cv)
     return MergeResult(report=report)
+
+
+@router.get("/cv", response_model=CvData)
+def get_master_cv() -> CvData:
+    from app.documents.cv import DocumentError
+    from app.documents.master import load_master_or_none
+
+    try:
+        master = load_master_or_none()
+    except DocumentError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if master is None:
+        raise HTTPException(status_code=404, detail="No master CV yet.")
+    return master
+
+
+@router.put("/cv", response_model=CvData)
+def save_master_cv(cv: CvData) -> CvData:
+    """Save the CV from the editor. Rendering first rejects unsafe links."""
+    from app.documents.cv import DocumentError, render_tex
+    from app.documents.master import save_master
+
+    try:
+        render_tex(cv)
+    except DocumentError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    save_master(cv)
+    return cv

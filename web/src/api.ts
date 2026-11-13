@@ -223,6 +223,62 @@ export async function setApplied(jobId: string, applied: boolean): Promise<strin
   return data.applied_at
 }
 
+export type MasterSummary = { exists: boolean; counts: Record<string, number> }
+export type MasterDraft = { yaml: string; flags: string[] }
+
+export function fetchMaster(): Promise<MasterSummary> {
+  return getJson('/api/master')
+}
+
+export function draftFromNotes(text: string): Promise<MasterDraft> {
+  return sendJson('/api/master/draft', 'POST', { text })
+}
+
+export function draftFromUploadedCv(): Promise<MasterDraft> {
+  return sendJson('/api/master/draft-from-cv', 'POST')
+}
+
+export function mergeDraft(yaml: string): Promise<{ report: string[] }> {
+  return sendJson('/api/master/merge', 'POST', { yaml })
+}
+
+export type CvLink = { label: string; url: string }
+
+export type CvData = {
+  header: { name: string; location: string; phone: string; email: string; links: CvLink[] }
+  summary: string
+  skills: { name: string; items: string[] }[]
+  experience: {
+    title: string
+    dates: string
+    organization: string
+    location: string
+    stack: string[]
+    bullets: string[]
+  }[]
+  projects: {
+    name: string
+    pinned: boolean
+    tracks: string[]
+    links: CvLink[]
+    stack: string[]
+    bullets: string[]
+  }[]
+  research: { title: string; links: CvLink[]; subtitle: string; tools: string; bullets: string[] }[]
+  education: { degree: string; dates: string; institution: string; grade: string; location: string }[]
+  certifications: { name: string; issuer: string; url: string }[]
+  volunteering: { name: string; date: string; url: string; bullets: string[] }[]
+  references: { name: string; lines: string[]; phone: string; email: string }[]
+}
+
+export function fetchMasterCv(): Promise<CvData> {
+  return getJson('/api/master/cv')
+}
+
+export function saveMasterCv(cv: CvData): Promise<CvData> {
+  return sendJson('/api/master/cv', 'PUT', cv)
+}
+
 export function fetchProfile(): Promise<ProfileState> {
   return getJson('/api/profile')
 }

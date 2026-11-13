@@ -4,9 +4,10 @@ type Props = {
   values: string[]
   onChange: (values: string[]) => void
   placeholder: string
+  commaAdds?: boolean
 }
 
-export function ChipInput({ values, onChange, placeholder }: Props) {
+export function ChipInput({ values, onChange, placeholder, commaAdds = true }: Props) {
   const [text, setText] = useState('')
 
   function add() {
@@ -37,7 +38,7 @@ export function ChipInput({ values, onChange, placeholder }: Props) {
         placeholder={placeholder}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ',') {
+          if (e.key === 'Enter' || (commaAdds && e.key === ',')) {
             e.preventDefault()
             add()
           }

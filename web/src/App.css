@@ -231,13 +231,15 @@
 /* Clear filters: under the nav bar, right side, scrolls away with the page */
 .list-tools {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
   max-width: 1440px;
   margin: 0 auto;
   padding: 14px 24px 0;
 }
 
 .clear-btn {
+  margin-left: auto;
   height: 38px;
   padding: 0 16px;
   border: 1px solid var(--line-strong);
