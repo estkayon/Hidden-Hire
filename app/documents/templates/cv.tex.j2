@@ -71,12 +71,12 @@
 
 \end{center}
 
-((* if cv.summary *))
+((* for key in cv.section_order *))
+((* if key == 'summary' and cv.summary *))
 \section{Professional Summary}
 ((( cv.summary )))
 
-((* endif *))
-((* if cv.skills *))
+((* elif key == 'skills' and cv.skills *))
 \section{Technical Skills}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabularx}{\textwidth}{@{}l X@{}}
@@ -86,8 +86,8 @@
 ((* endfor *))
 \end{tabularx}
 \renewcommand{\arraystretch}{1.0}
-((* endif *))
-((* if cv.experience *))
+
+((* elif key == 'experience' and cv.experience *))
 \section{Professional Experience}
 ((* for job in cv.experience *))
 \resumeSubheading{((( job.title )))}{((( job.dates )))}{((( job.organization )))}{((( job.location )))}
@@ -99,8 +99,7 @@
 ((* if not loop.last *))\entrygap((* endif *))
 
 ((* endfor *))
-((* endif *))
-((* if cv.projects *))
+((* elif key == 'projects' and cv.projects *))
 \section{Projects}
 ((* for project in cv.projects *))
 \begin{minipage}{\textwidth}
@@ -114,8 +113,7 @@
 ((* if not loop.last *))\par\entrygap((* endif *))
 
 ((* endfor *))
-((* endif *))
-((* if cv.research *))
+((* elif key == 'research' and cv.research *))
 \section{Research Experience}
 ((* for item in cv.research *))
 \begin{minipage}{\textwidth}
@@ -135,16 +133,14 @@
 ((* if not loop.last *))\par\entrygap((* endif *))
 
 ((* endfor *))
-((* endif *))
-((* if cv.education *))
+((* elif key == 'education' and cv.education *))
 \section{Education}
 ((* for edu in cv.education *))
 \resumeSubheading{((( edu.degree )))}{((( edu.dates )))}{((( edu.institution )))((* if edu.grade *)) \;|\; \textbf{((( edu.grade )))}((* endif *))}{((( edu.location )))}
 ((* if not loop.last *))\vspace{5pt}((* endif *))
 
 ((* endfor *))
-((* endif *))
-((* if cv.certifications *))
+((* elif key == 'certifications' and cv.certifications *))
 \section{Certifications}
 \begin{cvitemize}
 ((* for cert in cv.certifications *))
@@ -153,8 +149,7 @@
 ((* endfor *))
 \end{cvitemize}
 
-((* endif *))
-((* if cv.volunteering *))
+((* elif key == 'volunteering' and cv.volunteering *))
 \section{Volunteering}
 ((* for item in cv.volunteering *))
 \projectHeading{((( item.name )))((* if item.url *)) \;\textnormal{|\; \href{((( item.url | url )))}{View}}((* endif *))}{\textbf{((( item.date )))}}
@@ -168,7 +163,7 @@
 ((* if not loop.last *))\entrygap((* endif *))
 
 ((* endfor *))
-((* endif *))
+((* elif key == 'other_sections' *))
 ((* for section in cv.other_sections *))
 \section{((( section.title )))}
 \begin{cvitemize}
@@ -178,7 +173,7 @@
 \end{cvitemize}
 
 ((* endfor *))
-((* if cv.references *))
+((* elif key == 'references' and cv.references *))
 \section{References}
 ((* for ref in cv.references *))
 \begin{minipage}[t]{0.48\textwidth}
@@ -197,4 +192,5 @@ Email: \href{((( ('mailto:' ~ ref.email) | url )))}{((( ref.email )))}
 ((* endfor *))
 
 ((* endif *))
+((* endfor *))
 \end{document}

@@ -3,7 +3,7 @@ import { fetchMasterCv, saveMasterCv, type CvData, type CvLink } from '../api'
 import { ChipInput } from './ChipInput'
 import './CvEditor.css'
 
-export type ListKey = Exclude<keyof CvData, 'header' | 'summary'>
+export type ListKey = Exclude<keyof CvData, 'header' | 'summary' | 'section_order'>
 export type SetCv = <K extends keyof CvData>(key: K, value: CvData[K]) => void
 type Item<K extends ListKey> = CvData[K][number]
 
@@ -24,6 +24,19 @@ const TRACKS = [
   { value: 'ml', label: 'ML / AI / data' },
 ]
 
+const SECTION_LABELS: Record<string, string> = {
+  summary: 'Professional summary',
+  skills: 'Skills',
+  experience: 'Experience',
+  projects: 'Projects',
+  research: 'Research',
+  education: 'Education',
+  certifications: 'Certifications',
+  volunteering: 'Volunteering',
+  other_sections: 'Other sections',
+  references: 'References',
+}
+
 export const EMPTY_CV: CvData = {
   header: { name: '', location: '', phone: '', email: '', links: [] },
   summary: '',
@@ -36,8 +49,8 @@ export const EMPTY_CV: CvData = {
   volunteering: [],
   other_sections: [],
   references: [],
+  section_order: Object.keys(SECTION_LABELS),
 }
-
 const NEW_ITEM: { [K in ListKey]: () => Item<K> } = {
   skills: () => ({ name: '', items: [] }),
   experience: () => ({ title: '', dates: '', organization: '', location: '', stack: [], bullets: [''] }),
@@ -409,6 +422,42 @@ export function HeaderSection({ cv, set }: { cv: CvData; set: SetCv }) {
   )
 }
 
+export function SectionOrder({ cv, set }: { cv: CvData; set: SetCv }) {
+  const order = cv.section_order
+  return (
+    <section className="profile-card cv-section">
+      <h2 className="card-heading-title">Section order</h2>
+      <p className="card-help">The order of sections in your CV. Your name and contact details always come first.</p>
+      <ol className="cv-order">
+        {order.map((key, i) => (
+          <li key={key}>
+            <span className="cv-order-num">{i + 1}</span>
+            <span className="cv-order-label">{SECTION_LABELS[key] ?? key}</span>
+            <div className="cv-mini">
+              <button
+                type="button"
+                aria-label="Move up"
+                disabled={i === 0}
+                onClick={() => set('section_order', move(order, i, -1))}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                aria-label="Move down"
+                disabled={i === order.length - 1}
+                onClick={() => set('section_order', move(order, i, 1))}
+              >
+                ↓
+              </button>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 export function SummarySection({ cv, set }: { cv: CvData; set: SetCv }) {
   return (
     <section className="profile-card cv-section">
@@ -753,6 +802,7 @@ export function CvEditorPage() {
       {message && <p className={`toast is-${message.kind}`}>{message.text}</p>}
 
       <HeaderSection cv={cv} set={set} />
+      <SectionOrder cv={cv} set={set} />
       <SummarySection cv={cv} set={set} />
       <CvListSections cv={cv} set={set} />
 

@@ -277,6 +277,7 @@ export type CvData = {
   volunteering: { name: string; date: string; url: string; bullets: string[] }[]
   other_sections: { title: string; items: { text: string; url: string }[] }[]
   references: { name: string; lines: string[]; phone: string; email: string }[]
+  section_order: string[]
 }
 
 export type CvDraft = Omit<CvData, 'header'> & { header: CvData['header'] | null }

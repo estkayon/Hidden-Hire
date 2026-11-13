@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
@@ -131,6 +131,20 @@ class Reference(BaseModel):
     email: str = ""
 
 
+SECTION_KEYS = (
+    "summary",
+    "skills",
+    "experience",
+    "projects",
+    "research",
+    "education",
+    "certifications",
+    "volunteering",
+    "other_sections",
+    "references",
+)
+
+
 class CvData(BaseModel):
     header: Header
     summary: str = ""
@@ -143,6 +157,14 @@ class CvData(BaseModel):
     volunteering: list[Volunteering] = Field(default_factory=list)
     other_sections: list[CustomSection] = Field(default_factory=list)
     references: list[Reference] = Field(default_factory=list)
+    section_order: list[str] = Field(default_factory=lambda: list(SECTION_KEYS))
+
+    @field_validator("section_order")
+    @classmethod
+    def _complete_order(cls, value: list[str]) -> list[str]:
+        """Known sections in the given order; unknown names dropped, missing ones added at the end."""
+        known = [key for key in dict.fromkeys(value) if key in SECTION_KEYS]
+        return known + [key for key in SECTION_KEYS if key not in known]
 
 
 class Latex(str):

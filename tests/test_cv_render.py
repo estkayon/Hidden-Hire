@@ -71,3 +71,28 @@ def test_other_sections_are_rendered_and_escaped():
     assert r"\section{Awards \& Honours}" in tex
     assert r"\item Top 5\% in contest" in tex
     assert r"\item Hackathon winner \;|\; \href{https://x.com/award}{View}" in tex
+
+
+def test_section_order_is_followed_and_completed():
+    cv = CvData.model_validate(
+        {
+            **CV.model_dump(),
+            "education": [{"degree": "BSc", "dates": "2026", "institution": "AIUB"}],
+            "experience": [
+                {
+                    "title": "Intern",
+                    "dates": "2026",
+                    "organization": "Acme",
+                    "bullets": ["Built apps."],
+                }
+            ],
+            "section_order": ["education", "made_up", "experience"],
+        }
+    )
+    assert cv.section_order[:2] == ["education", "experience"]
+    assert "made_up" not in cv.section_order
+    assert len(cv.section_order) == 10
+    tex = render_tex(cv)
+    assert tex.index(r"\section{Education}") < tex.index(
+        r"\section{Professional Experience}"
+    )
