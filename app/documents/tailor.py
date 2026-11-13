@@ -36,6 +36,7 @@ MAX_PROJECT_BULLETS = 3
 MAX_SUMMARY_CHARS = 700
 MAX_JOB_CHARS = 3500
 MAX_KEYWORDS = 10
+DEFAULT_TOTAL_PROJECTS = 5
 MIN_LENGTH_RATIO = 0.75  # a tailored item shorter than this has lost detail
 
 log = logging.getLogger("tailor")
@@ -323,9 +324,8 @@ def optional_count_for(master: CvData, total_projects: int | None) -> int:
     """How many optional projects to add so the CV shows total_projects (pinned ones always stay)."""
     pinned = sum(p.pinned for p in master.projects)
     available = len(master.projects) - pinned
-    if total_projects is None:
-        return min(OPTIONAL_PROJECTS, available)
-    return max(0, min(total_projects - pinned, available))
+    total = DEFAULT_TOTAL_PROJECTS if total_projects is None else total_projects
+    return max(0, min(total - pinned, available))
 
 
 def delete_cv(job_id: str) -> None:

@@ -211,6 +211,49 @@
   color: var(--text-faint);
 }
 
+.cv-linked {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.cv-linked-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cv-linked-fields textarea,
+.cv-linked-fields input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--mist);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.cv-linked-fields input {
+  font-size: 0.86rem;
+}
+
+.cv-linked-fields textarea:focus,
+.cv-linked-fields input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgb(169 224 241 / 0.6);
+}
+
+.cv-linked-fields input.is-invalid {
+  border-color: #c0443d;
+}
+
 .cv-link {
   display: grid;
   grid-template-columns: 140px 1fr auto;

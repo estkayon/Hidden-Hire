@@ -15,9 +15,9 @@ export const LIST_SECTIONS: ListKey[] = [
   'education',
   'certifications',
   'volunteering',
+  'other_sections',
   'references',
 ]
-
 const TRACKS = [
   { value: 'software', label: 'Software / backend' },
   { value: 'frontend', label: 'Frontend' },
@@ -34,6 +34,7 @@ export const EMPTY_CV: CvData = {
   education: [],
   certifications: [],
   volunteering: [],
+  other_sections: [],
   references: [],
 }
 
@@ -45,6 +46,7 @@ const NEW_ITEM: { [K in ListKey]: () => Item<K> } = {
   education: () => ({ degree: '', dates: '', institution: '', grade: '', location: '' }),
   certifications: () => ({ name: '', issuer: '', url: '' }),
   volunteering: () => ({ name: '', date: '', url: '', bullets: [] }),
+  other_sections: () => ({ title: '', items: [{ text: '', url: '' }] }),
   references: () => ({ name: '', lines: [], phone: '', email: '' }),
 }
 
@@ -83,6 +85,10 @@ export function cleanCv(cv: CvData): CvData {
     })),
     research: cv.research.map((r) => ({ ...r, links: cleanLinks(r.links), bullets: cleanList(r.bullets) })),
     volunteering: cv.volunteering.map((v) => ({ ...v, bullets: cleanList(v.bullets) })),
+    other_sections: cv.other_sections.map((s) => ({
+      ...s,
+      items: s.items.filter((i) => i.text.trim()).map((i) => ({ text: i.text.trim(), url: i.url.trim() })),
+    })),
     references: cv.references.map((r) => ({ ...r, lines: cleanList(r.lines) })),
   }
 }
@@ -133,6 +139,12 @@ export function validate(cv: CvData, requireHeader = true): string[] {
   cv.volunteering.forEach((v, i) => {
     need(!blank(v.name), `Volunteering ${i + 1}: add a name`)
     need(blank(v.url) || isUrl(v.url), `${v.name || `Volunteering ${i + 1}`}: the link must start with https://`)
+  })
+  cv.other_sections.forEach((s, i) => {
+    const where = s.title || `Other section ${i + 1}`
+    need(!blank(s.title), `Other section ${i + 1}: add a title`)
+    need(s.items.some((item) => !blank(item.text)), `${where}: add at least one item`)
+    s.items.forEach((item) => need(blank(item.url) || isUrl(item.url), `${where}: a link must start with https://`))
   })
   cv.references.forEach((r, i) => need(!blank(r.name), `Reference ${i + 1}: add a name`))
   return errors
@@ -235,6 +247,59 @@ function Links({ values, onChange }: { values: CvLink[]; onChange: (values: CvLi
       ))}
       <button type="button" className="cv-add-small" onClick={() => onChange([...values, { label: '', url: '' }])}>
         + Add link
+      </button>
+    </div>
+  )
+}
+
+type LinkedItem = { text: string; url: string }
+
+function LinkedItems({ values, onChange }: { values: LinkedItem[]; onChange: (values: LinkedItem[]) => void }) {
+  const update = (i: number, patch: Partial<LinkedItem>) =>
+    onChange(values.map((item, j) => (j === i ? { ...item, ...patch } : item)))
+  return (
+    <div className="cv-block is-wide">
+      <span className="cv-sub">Items (link is optional)</span>
+      {values.map((item, i) => (
+        <div key={i} className="cv-linked">
+          <span className="cv-dot" aria-hidden="true">
+            •
+          </span>
+          <div className="cv-linked-fields">
+            <textarea
+              rows={2}
+              value={item.text}
+              maxLength={400}
+              onChange={(e) => update(i, { text: e.target.value })}
+            />
+            <input
+              className={!blank(item.url) && !isUrl(item.url) ? 'is-invalid' : ''}
+              value={item.url}
+              placeholder="https:// (optional, shown as View)"
+              maxLength={400}
+              onChange={(e) => update(i, { url: e.target.value })}
+            />
+          </div>
+          <div className="cv-mini">
+            <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => onChange(move(values, i, -1))}>
+              ↑
+            </button>
+            <button
+              type="button"
+              aria-label="Move down"
+              disabled={i === values.length - 1}
+              onClick={() => onChange(move(values, i, 1))}
+            >
+              ↓
+            </button>
+            <button type="button" aria-label="Remove item" onClick={() => onChange(values.filter((_, j) => j !== i))}>
+              ×
+            </button>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="cv-add-small" onClick={() => onChange([...values, { text: '', url: '' }])}>
+        + Add item
       </button>
     </div>
   )
@@ -558,6 +623,32 @@ export function CvListSections({ cv, set, sections = LIST_SECTIONS, openFirst = 
               <Field label="Date" value={v.date} onChange={(date) => update({ date })} placeholder="Apr 2025" />
               <Field label="Link" url value={v.url} onChange={(url) => update({ url })} placeholder="https://" />
               <Bullets values={v.bullets} onChange={(bullets) => update({ bullets })} />
+            </>
+          )}
+        />
+      )}
+
+      {show('other_sections') && (
+        <ItemList<'other_sections'>
+          title="Other sections"
+          hint="Awards, publications, languages, leadership, courses or anything else. One line per item."
+          addLabel="Add section"
+          items={cv.other_sections}
+          makeItem={NEW_ITEM.other_sections}
+          heading={(s) => s.title}
+          onChange={(other_sections) => set('other_sections', other_sections)}
+          openFirst={openFirst}
+          render={(s, update) => (
+            <>
+              <Field
+                label="Section title"
+                required
+                wide
+                value={s.title}
+                onChange={(title) => update({ title })}
+                placeholder="e.g. Awards"
+              />
+              <LinkedItems values={s.items} onChange={(items) => update({ items })} />
             </>
           )}
         />

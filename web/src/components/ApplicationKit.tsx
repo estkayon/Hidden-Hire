@@ -30,7 +30,7 @@ export function ApplicationKit({ jobId }: { jobId: string }) {
         const min = counts.pinned ?? 0
         const max = counts.projects ?? 0
         setRange({ min, max })
-        setProjects(Math.min(max, min + 2))
+        setProjects(Math.min(max, Math.max(min, 5)))
       })
       .catch(() => setRange(null))
   }, [])
@@ -122,7 +122,7 @@ export function ApplicationKit({ jobId }: { jobId: string }) {
                 {options.map((n) => (
                   <option key={n} value={n}>
                     {n}
-                    {n === range?.min ? ' (pinned only)' : ''}
+                    {n === range?.min && range.min > 0 ? ' (pinned only)' : ''}
                   </option>
                 ))}
               </select>

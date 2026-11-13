@@ -275,6 +275,7 @@ export type CvData = {
   education: { degree: string; dates: string; institution: string; grade: string; location: string }[]
   certifications: { name: string; issuer: string; url: string }[]
   volunteering: { name: string; date: string; url: string; bullets: string[] }[]
+  other_sections: { title: string; items: { text: string; url: string }[] }[]
   references: { name: string; lines: string[]; phone: string; email: string }[]
 }
 

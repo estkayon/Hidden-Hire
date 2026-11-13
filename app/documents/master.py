@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 from app.documents.cv import (
     MASTER_CV,
     Certification,
+    CustomSection,
     CvData,
     DocumentError,
     Education,
@@ -49,6 +50,7 @@ class CvDraft(BaseModel):
     education: list[Education] = Field(default_factory=list)
     certifications: list[Certification] = Field(default_factory=list)
     volunteering: list[Volunteering] = Field(default_factory=list)
+    other_sections: list[CustomSection] = Field(default_factory=list)
     references: list[Reference] = Field(default_factory=list)
 
 
@@ -82,6 +84,23 @@ def check_draft(draft: CvDraft, source: str) -> tuple[CvDraft, list[str]]:
                 item.links = [x for x in item.links if _in_source(x.url, source)]
             if hasattr(item, "stack"):
                 item.stack = [tool for tool in item.stack if _in_source(tool, source)]
+    for section in draft.other_sections:
+        kept = []
+        for item in section.items:
+            item.text = clean(item.text)
+            if not item.text:
+                continue
+            issues = unsupported(item.text, source)
+            if issues:
+                flags.append(f"{section.title}: removed an item ({', '.join(issues)})")
+                continue
+            if item.url and not _in_source(item.url, source):
+                item.url = ""
+            kept.append(item)
+        section.items = kept
+    draft.other_sections = [
+        s for s in draft.other_sections if s.title.strip() and s.items
+    ]
     for group in draft.skills:
         group.items = [item for item in group.items if _in_source(item, source)]
     draft.skills = [g for g in draft.skills if g.items]
@@ -165,6 +184,27 @@ def _merge_skills(
     return groups
 
 
+def _merge_sections(
+    existing: list[CustomSection], new: list[CustomSection], report: list[str]
+) -> list[CustomSection]:
+    """A section with a known title gets the new items; other sections are appended."""
+    sections = [s.model_copy(deep=True) for s in existing]
+    by_title = {s.title: s for s in sections}
+    for section in new:
+        target = match(section.title, by_title)
+        if target is None:
+            sections.append(section)
+            by_title[section.title] = section
+            report.append(f"Added section '{section.title}'")
+            continue
+        known = {item.text: item for item in target.items}
+        added = [item for item in section.items if not match(item.text, known)]
+        target.items += added
+        if added:
+            report.append(f"Added {len(added)} items to '{target.title}'")
+    return sections
+
+
 def merge(master: CvData | None, draft: CvDraft) -> tuple[CvData, list[str]]:
     """New items are added; the master's header and summary are never replaced."""
     if master is None:
@@ -207,6 +247,9 @@ def merge(master: CvData | None, draft: CvDraft) -> tuple[CvData, list[str]]:
         ),
         "references": _merge_items(
             master.references, draft.references, lambda r: r.name, "reference", report
+        ),
+        "other_sections": _merge_sections(
+            master.other_sections, draft.other_sections, report
         ),
     }
     if not master.summary and draft.summary:

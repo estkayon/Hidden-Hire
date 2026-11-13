@@ -195,7 +195,11 @@ def test_skills_reordered_without_new_items():
 def test_optional_count_follows_requested_total():
     from app.documents.tailor import optional_count_for
 
-    assert optional_count_for(MASTER, None) == 2
+    assert optional_count_for(MASTER, None) == 3
+    no_pins = MASTER.model_copy(deep=True)
+    for project in no_pins.projects:
+        project.pinned = False
+    assert optional_count_for(no_pins, None) == 5
     assert optional_count_for(MASTER, 5) == 3
     assert optional_count_for(MASTER, 1) == 0
     assert optional_count_for(MASTER, 20) == 3

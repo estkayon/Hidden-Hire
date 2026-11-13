@@ -169,6 +169,15 @@
 
 ((* endfor *))
 ((* endif *))
+((* for section in cv.other_sections *))
+\section{((( section.title )))}
+\begin{cvitemize}
+((* for item in section.items *))
+    \item ((( item.text )))((* if item.url *)) \;|\; \href{((( item.url | url )))}{View}((* endif *))
+((* endfor *))
+\end{cvitemize}
+
+((* endfor *))
 ((* if cv.references *))
 \section{References}
 ((* for ref in cv.references *))

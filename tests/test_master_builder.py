@@ -99,3 +99,30 @@ def test_save_keeps_a_backup(tmp_path):
     save_master(MASTER, path)
     assert path.with_suffix(".yaml.bak").exists()
     assert path.read_text(encoding="utf-8").startswith("# Master CV")
+
+
+def test_other_sections_merge_by_title():
+    master = CvData.model_validate(
+        {
+            **MASTER.model_dump(),
+            "other_sections": [{"title": "Languages", "items": ["Bangla (native)"]}],
+        }
+    )
+    draft = CvDraft.model_validate(
+        {
+            "other_sections": [
+                {
+                    "title": "languages",
+                    "items": ["Bangla (native)", "English (fluent)"],
+                },
+                {"title": "Awards", "items": ["Hackathon finalist"]},
+            ]
+        }
+    )
+    cv, report = merge(master, draft)
+    assert [item.text for item in cv.other_sections[0].items] == [
+        "Bangla (native)",
+        "English (fluent)",
+    ]
+    assert cv.other_sections[1].title == "Awards"
+    assert "Added section 'Awards'" in report

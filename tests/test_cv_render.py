@@ -50,3 +50,24 @@ def test_render_escapes_all_values():
     assert r"\textbackslash{}input\{secret.txt\}" in tex
     assert r"\input{secret.txt}" not in tex
     assert r"\href{https://github.com/jane}{github.com/jane}" in tex
+
+
+def test_other_sections_are_rendered_and_escaped():
+    cv = CvData.model_validate(
+        {
+            **CV.model_dump(),
+            "other_sections": [
+                {
+                    "title": "Awards & Honours",
+                    "items": [
+                        "Top 5% in contest",
+                        {"text": "Hackathon winner", "url": "https://x.com/award"},
+                    ],
+                }
+            ],
+        }
+    )
+    tex = render_tex(cv)
+    assert r"\section{Awards \& Honours}" in tex
+    assert r"\item Top 5\% in contest" in tex
+    assert r"\item Hackathon winner \;|\; \href{https://x.com/award}{View}" in tex

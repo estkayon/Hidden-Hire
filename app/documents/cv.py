@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
@@ -105,6 +105,25 @@ class Volunteering(BaseModel):
     bullets: list[str] = Field(default_factory=list)
 
 
+class SectionItem(BaseModel):
+    """One line of a custom section, with an optional link shown as "View"."""
+
+    text: str
+    url: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_plain_text(cls, value):
+        return {"text": value} if isinstance(value, str) else value
+
+
+class CustomSection(BaseModel):
+    """Any extra section such as Awards, Publications or Languages: a title and one line per item."""
+
+    title: str
+    items: list[SectionItem]
+
+
 class Reference(BaseModel):
     name: str
     lines: list[str] = Field(default_factory=list)
@@ -122,6 +141,7 @@ class CvData(BaseModel):
     education: list[Education] = Field(default_factory=list)
     certifications: list[Certification] = Field(default_factory=list)
     volunteering: list[Volunteering] = Field(default_factory=list)
+    other_sections: list[CustomSection] = Field(default_factory=list)
     references: list[Reference] = Field(default_factory=list)
 
 

@@ -11,6 +11,9 @@ Rules
   "frontend" for UI work. A project can have more than one.
 - Copy links exactly as written in the notes. If there is no link, leave "links" empty.
 - Leave out any section the notes do not mention.
+- Use "other_sections" for anything that fits none of the other sections, such as awards, publications,
+  languages, leadership, courses or test scores. Give each a short title and one line per item.
+  Add an item "url" only when the notes give a link for it.
 - Natural, professional, specific wording. No buzzwords or words such as passionate, innovative or cutting-edge.
 
 Return only a JSON object with any of these keys:
@@ -23,4 +26,5 @@ Return only a JSON object with any of these keys:
  "education": [{"degree": "", "dates": "", "institution": "", "grade": "", "location": ""}],
  "certifications": [{"name": "", "issuer": "", "url": ""}],
  "volunteering": [{"name": "", "date": "", "url": "", "bullets": [""]}],
+ "other_sections": [{"title": "", "items": [{"text": "", "url": ""}]}],
  "references": [{"name": "", "lines": [""], "phone": "", "email": ""}]}

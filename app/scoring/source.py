@@ -43,6 +43,9 @@ def master_as_text(cv) -> str:
         )
     for c in cv.certifications:
         lines.append(f"Certification: {c.name}" + (f", {c.issuer}" if c.issuer else ""))
+    for section in cv.other_sections:
+        lines.append(f"{section.title}:")
+        lines += [f"- {item.text}" for item in section.items]
     return "\n".join(lines)
 
 
