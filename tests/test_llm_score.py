@@ -91,3 +91,50 @@ def test_judge_rejects_bad_reply(monkeypatch):
     monkeypatch.setattr(llm_score, "complete", lambda *args, **kwargs: '{"skills": 5}')
     with pytest.raises(ValueError):
         llm_score.judge(make_job(), PROFILE, "cv text")
+
+
+def test_keyword_coverage():
+    coverage = llm_score.keyword_coverage(
+        "We need Python, Docker and Kubernetes.", ["python", "Docker"]
+    )
+    assert coverage == {
+        "percent": 67,
+        "matched": ["Python", "Docker"],
+        "missing": ["Kubernetes"],
+    }
+    assert llm_score.keyword_coverage("Nice team.", ["Python"])["percent"] is None
+
+
+def test_judge_adds_checklist_verdict_and_fingerprint(monkeypatch):
+    import json
+
+    reply = {
+        **REPLY,
+        "requirements": [
+            {
+                "text": "Python",
+                "importance": "must",
+                "status": "met",
+                "evidence": "Hidden Hire",
+            }
+        ],
+        "verdict": "apply",
+        "verdict_reason": "Strong match.",
+    }
+    monkeypatch.setattr(
+        llm_score, "complete", lambda *args, **kwargs: json.dumps(reply)
+    )
+    _, details = llm_score.judge(make_job(), PROFILE, "cv text")
+    assert details["requirements"][0]["status"] == "met"
+    assert details["verdict"] == "apply"
+    assert details["source_hash"] == llm_score.fingerprint("cv text")
+
+    blocked = {
+        **reply,
+        "blockers": [{"reason": "Citizenship", "quote": "Build ML pipelines"}],
+    }
+    monkeypatch.setattr(
+        llm_score, "complete", lambda *args, **kwargs: json.dumps(blocked)
+    )
+    _, details = llm_score.judge(make_job(), PROFILE, "cv text")
+    assert details["verdict"] == "skip"

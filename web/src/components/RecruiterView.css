@@ -177,6 +177,171 @@
   margin-top: 4px;
 }
 
+/* Verdict */
+.rv-verdict {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 22px;
+  padding: 12px 14px;
+  border-radius: 16px;
+}
+
+.rv-verdict p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.rv-verdict.is-good {
+  background: rgb(60 154 107 / 0.1);
+}
+
+.rv-verdict.is-maybe {
+  background: rgb(242 204 77 / 0.16);
+}
+
+.rv-verdict.is-no {
+  background: rgb(239 122 111 / 0.12);
+}
+
+.rv-verdict-pill {
+  flex-shrink: 0;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.is-good > .rv-verdict-pill,
+.rv-verdict-pill.is-good {
+  background: #1c7c52;
+  color: #fbf9f0;
+}
+
+.is-maybe > .rv-verdict-pill,
+.rv-verdict-pill.is-maybe {
+  background: #e3b324;
+  color: #3f2f00;
+}
+
+.is-no > .rv-verdict-pill,
+.rv-verdict-pill.is-no {
+  background: #c0443d;
+  color: #fbf9f0;
+}
+
+/* Requirement checklist */
+.rv-reqs {
+  margin: 0 0 20px;
+}
+
+.rv-reqs ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rv-reqs li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--glass-strong);
+}
+
+.rv-req-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.is-met .rv-req-icon {
+  background: rgb(60 154 107 / 0.16);
+  color: #1c6b47;
+}
+
+.is-partly .rv-req-icon {
+  background: rgb(242 204 77 / 0.25);
+  color: #7a5a06;
+}
+
+.is-missing .rv-req-icon {
+  background: rgb(239 122 111 / 0.18);
+  color: #9e3530;
+}
+
+.rv-req-text {
+  margin: 1px 0 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.rv-req-evidence {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+/* ATS keyword coverage */
+.rv-keywords {
+  margin: 0 0 24px;
+}
+
+.rv-kw-chips {
+  margin-top: 10px;
+}
+
+.rv-kw.is-have {
+  background: rgb(60 154 107 / 0.14);
+  color: #1c6b47;
+}
+
+.rv-kw.is-missing {
+  border: 1px dashed rgb(192 68 61 / 0.45);
+  color: #9e3530;
+}
+
+/* Out of date notice on the card */
+.rv-outdated {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(242 204 77 / 0.18);
+  font-size: 0.85rem;
+}
+
+.rv-outdated p {
+  margin: 0;
+}
+
+.rv-outdated button {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--teal);
+  color: var(--mist);
+  font-weight: 600;
+  cursor: pointer;
+}
+
 @keyframes rv-grow {
   from {
     transform: scaleX(0);

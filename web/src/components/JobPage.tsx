@@ -239,6 +239,7 @@ export function JobPage({ jobId, onToggleSave, onAppliedChange }: Props) {
           {(job.recruiter_view || job.match !== null) && (
             <RecruiterCard
               view={job.recruiter_view}
+              outdated={job.recruiter_outdated}
               judging={judging}
               error={judgeError}
               onRequest={getRecruiterView}

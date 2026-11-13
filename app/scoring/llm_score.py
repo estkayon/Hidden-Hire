@@ -4,6 +4,7 @@ import logging
 import re
 import time
 from datetime import UTC, datetime, timedelta
+from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import func, select
@@ -12,8 +13,8 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal, init_db
 from app.llm.client import LLMError, complete, load_settings
 from app.models import Job, Score
-from app.profile import Profile
-from app.scoring.source import candidate
+from app.profile import Profile, detect_skills
+from app.scoring.source import candidate, fingerprint
 
 STAGE1_MODEL = "stage1"
 STAGE2_LIMIT = 12
@@ -64,11 +65,20 @@ Use an empty list when there are none.
 
 strengths and gaps: at most 3 items each, every item 2 to 6 words, one point per item.
 summary: one sentence of at most 20 words.
+
+requirements: the most important requirements from the posting, at most 8. For each give
+"importance" ("must" for required, "nice" for preferred), "status" ("met", "partly" or "missing")
+and "evidence": at most 12 words naming the project, role or degree that shows it, or empty when missing.
+
+verdict: "apply" when the candidate is a good fit, "stretch" when there are gaps but applying is
+reasonable, "skip" when the job is clearly out of reach. verdict_reason: one sentence of at most 20 words.
 Return only a JSON object in exactly this shape:
 {"skills": {"score": 0, "reason": ""}, "experience": {"score": 0, "reason": ""},
  "eligibility": {"score": 0, "reason": ""}, "domain": {"score": 0, "reason": ""},
  "education": {"score": 0, "reason": ""}, "strengths": [""], "gaps": [""],
- "blockers": [{"reason": "", "quote": ""}], "summary": ""}"""
+ "blockers": [{"reason": "", "quote": ""}], "summary": "",
+ "requirements": [{"text": "", "importance": "must", "status": "met", "evidence": ""}],
+ "verdict": "apply", "verdict_reason": ""}"""
 
 
 class Dimension(BaseModel):
@@ -81,6 +91,13 @@ class Blocker(BaseModel):
     quote: str = ""
 
 
+class Requirement(BaseModel):
+    text: str
+    importance: Literal["must", "nice"] = "must"
+    status: Literal["met", "partly", "missing"]
+    evidence: str = ""
+
+
 class Stage2Reply(BaseModel):
     skills: Dimension
     experience: Dimension
@@ -91,6 +108,9 @@ class Stage2Reply(BaseModel):
     gaps: list[str] = Field(default_factory=list)
     blockers: list[Blocker] = Field(default_factory=list)
     summary: str = ""
+    requirements: list[Requirement] = Field(default_factory=list)
+    verdict: Literal["apply", "stretch", "skip"] = "stretch"
+    verdict_reason: str = ""
 
 
 def _squash(text: str) -> str:
@@ -148,6 +168,29 @@ def total_score(reply: Stage2Reply) -> int:
     return min(total, BLOCKER_CAP) if reply.blockers else total
 
 
+def keyword_coverage(job_text: str, skills: list[str]) -> dict:
+    """Known skills named in the job, and how many of them the candidate has. No LLM."""
+    wanted = detect_skills(job_text)
+    have = {skill.lower() for skill in skills}
+    matched = [s for s in wanted if s.lower() in have]
+    missing = [s for s in wanted if s.lower() not in have]
+    percent = round(100 * len(matched) / len(wanted)) if wanted else None
+    return {"percent": percent, "matched": matched, "missing": missing}
+
+
+def _requirements(reply: Stage2Reply) -> list[dict]:
+    return [
+        {
+            "text": r.text.strip()[:160],
+            "importance": r.importance,
+            "status": r.status,
+            "evidence": r.evidence.strip()[:120],
+        }
+        for r in reply.requirements
+        if r.text.strip()
+    ][:8]
+
+
 def _clean_list(values: list[str], limit: int = 3) -> list[str]:
     return [v.strip()[:120] for v in values if v and v.strip()][:limit]
 
@@ -176,6 +219,11 @@ def judge(job: Job, profile: Profile, cv: str) -> tuple[int, dict]:
         "blockers": _clean_list([b.reason for b in reply.blockers]),
         "summary": reply.summary.strip()[:200],
         "total": total,
+        "requirements": _requirements(reply),
+        "verdict": "skip" if reply.blockers else reply.verdict,
+        "verdict_reason": reply.verdict_reason.strip()[:200],
+        "keywords": keyword_coverage(f"{job.title}\n{job.description}", profile.skills),
+        "source_hash": fingerprint(cv),
     }
     return total, details
 

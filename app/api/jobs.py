@@ -13,6 +13,7 @@ from app.db import get_session
 from app.eligibility import Eligibility, eligibility
 from app.models import Application, Job, Score
 from app.scoring.source import candidate, has_source
+from app.scoring.source import fingerprint as source_fingerprint
 from app.sync import naive_utc, to_row
 from fetcher.models import Job as JobRecord
 from fetcher.models import make_job_id
@@ -62,6 +63,7 @@ class JobDetail(JobSummary):
     apply_email: str | None
     tags: list[str]
     recruiter_view: dict | None
+    recruiter_outdated: bool = False
 
 
 class JobList(BaseModel):
@@ -95,6 +97,7 @@ def _to_model[T: JobSummary](
     now: datetime,
     application: Application | None,
     score: Score | None,
+    current_source: str | None = None,
 ) -> T:
     seen_at = (job.posted_at or job.fetched_at).replace(tzinfo=UTC)
     applied = application is not None and application.status == "applied"
@@ -115,9 +118,12 @@ def _to_model[T: JobSummary](
         round(score.final_score) if score and score.final_score is not None else None
     )
     if "recruiter_view" in model.model_fields:
-        data["recruiter_view"] = (
-            (score.breakdown or {}).get("stage2") if score else None
+        view = (score.breakdown or {}).get("stage2") if score else None
+        data["recruiter_view"] = view
+        data["recruiter_outdated"] = (
+            bool(view) and view.get("source_hash") != current_source
         )
+
     if HTML_TAG.search(data.get("description") or ""):
         data["description"] = html_to_text(
             data["description"]
@@ -304,10 +310,13 @@ def get_job(job_id: str, session: SessionDep) -> JobDetail:
     job = session.get(Job, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    found = candidate()
+    current = source_fingerprint(found[1]) if found else None
     return _to_model(
         job,
         JobDetail,
         datetime.now(UTC),
         session.get(Application, job_id),
         _score_of(session, job_id),
+        current,
     )

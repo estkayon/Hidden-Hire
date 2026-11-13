@@ -1,5 +1,7 @@
 """What the candidate is matched on: the master CV when it exists, otherwise the uploaded CV."""
 
+import hashlib
+
 from app import profile as store
 from app.profile import Profile, cv_text, detect_skills
 
@@ -67,3 +69,8 @@ def candidate() -> tuple[Profile, str] | None:
     profile = store.load_profile() or Profile()
     skills = list(dict.fromkeys([*profile.skills, *detect_skills(text)]))
     return profile.model_copy(update={"skills": skills}), text
+
+
+def fingerprint(text: str) -> str:
+    """Short hash of the candidate text, to tell when a saved review is out of date."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]

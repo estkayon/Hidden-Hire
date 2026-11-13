@@ -47,6 +47,10 @@ export type RecruiterView = {
   blockers: string[]
   summary: string
   total: number
+  requirements?: { text: string; importance: 'must' | 'nice'; status: 'met' | 'partly' | 'missing'; evidence: string }[]
+  verdict?: 'apply' | 'stretch' | 'skip'
+  verdict_reason?: string
+  keywords?: { percent: number | null; matched: string[]; missing: string[] }
 }
 
 export type JobList = {
@@ -61,6 +65,7 @@ export type JobDetail = Job & {
   apply_email: string | null
   tags: string[]
   recruiter_view: RecruiterView | null
+  recruiter_outdated: boolean
 }
 
 export type PasteInput = {
