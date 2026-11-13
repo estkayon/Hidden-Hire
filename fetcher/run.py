@@ -30,6 +30,7 @@ from fetcher.sources.manatal import ManatalSource
 from fetcher.sources.mycareersfuture import MyCareersFutureSource
 from fetcher.sources.personio import PersonioSource
 from fetcher.sources.recruitee import RecruiteeSource
+from fetcher.sources.recruiterbox import RecruiterboxSource
 from fetcher.sources.reed import ReedSource
 from fetcher.sources.remoteintegrity import RemoteIntegritySource
 from fetcher.sources.remoteok import RemoteOKSource
@@ -59,6 +60,7 @@ def build_sources() -> list[Source]:
         TeamtailorSource(companies.get("teamtailor") or {}),
         ManatalSource(companies.get("manatal") or {}),
         WordPressSource(companies.get("wordpress") or {}),
+        RecruiterboxSource(companies.get("recruiterbox") or {}),
         RemoteOKSource(),
         RemotiveSource(),
         WeWorkRemotelySource(),

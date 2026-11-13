@@ -99,3 +99,10 @@ manatal:
 wordpress:
   https://www.bracits.com/wp-json/wp/v2/awsm_job_openings: BRAC IT
   https://mpower-social.com/wp-json/wp/v2/jobpost: mPower
+  # https://www.gigatechltd.com/wp-json/wp/v2/jobpost: Gigatech
+  https://www.wpxpo.com/wp-json/wp/v2/job: WPXPO
+
+
+# Recruiterbox / Trakstar Hire client name -> company name
+recruiterbox:
+  therap: Therap (BD)
