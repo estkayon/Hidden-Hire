@@ -19,7 +19,8 @@ from fetcher.sources.ashby import AshbySource
 from fetcher.sources.base import FetchResult, Source, describe_error
 from fetcher.sources.bdtechjobs import BDTechJobsSource
 from fetcher.sources.bulldogjob import BulldogjobSource
-from fetcher.sources.dhakacareers import DhakaCareersSource
+
+# from fetcher.sources.dhakacareers import DhakaCareersSource
 from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.hackernews import HackerNewsSource
 from fetcher.sources.himalayas import HimalayasSource
@@ -75,7 +76,7 @@ def build_sources() -> list[Source]:
         SeekSource(),
         RemoteIntegritySource(),
         BDTechJobsSource(),
-        DhakaCareersSource(),
+        # DhakaCareersSource(),
         BulldogjobSource(),
         JapanDevSource(),
     ]

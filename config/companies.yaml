@@ -90,10 +90,12 @@ smartrecruiters:
   # Bangladesh
   PolygonTechnology: Polygon Technology
   HishabeeTechnologiesLimited: Hishabee
+  shopup: ShopUp
 
 # careers-page.com/<slug> (Bangladeshi recruiting agencies)
 manatal:
-  talvette: Talvette (agency)  
+  talvette: Talvette (agency)
+  stealth-startups: Stealth Startups (agency)
 
 # Bangladeshi company WordPress sites: REST collection URL -> company name
 wordpress:
