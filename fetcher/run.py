@@ -26,6 +26,7 @@ from fetcher.sources.himalayas import HimalayasSource
 from fetcher.sources.japandev import JapanDevSource
 from fetcher.sources.jobicy import JobicySource
 from fetcher.sources.lever import LeverSource
+from fetcher.sources.manatal import ManatalSource
 from fetcher.sources.mycareersfuture import MyCareersFutureSource
 from fetcher.sources.personio import PersonioSource
 from fetcher.sources.recruitee import RecruiteeSource
@@ -37,6 +38,7 @@ from fetcher.sources.seek import SeekSource
 from fetcher.sources.smartrecruiters import SmartRecruitersSource
 from fetcher.sources.teamtailor import TeamtailorSource
 from fetcher.sources.weworkremotely import WeWorkRemotelySource
+from fetcher.sources.wordpress import WordPressSource
 from fetcher.sources.workable import WorkableSource
 from fetcher.sources.workingnomads import WorkingNomadsSource
 from fetcher.store import prune_job_files, write_health, write_jobs
@@ -55,6 +57,8 @@ def build_sources() -> list[Source]:
         SmartRecruitersSource(companies.get("smartrecruiters") or {}),
         PersonioSource(companies.get("personio") or {}),
         TeamtailorSource(companies.get("teamtailor") or {}),
+        ManatalSource(companies.get("manatal") or {}),
+        WordPressSource(companies.get("wordpress") or {}),
         RemoteOKSource(),
         RemotiveSource(),
         WeWorkRemotelySource(),
