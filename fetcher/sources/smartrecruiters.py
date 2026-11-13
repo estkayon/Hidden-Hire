@@ -41,11 +41,15 @@ class SmartRecruitersSource(BoardSource):
     name = "smartrecruiters"
 
     def fetch_items(self, client: httpx.Client, token: str) -> list[dict]:
-        url = API_URL.format(token=token)
+        """token is 'Company' or 'Company:cc' to keep only one country (API country filter)."""
+        company, _, country = token.partition(":")
+        url = API_URL.format(token=company)
         now = datetime.now(UTC)
         candidates = []
         for page in range(MAX_PAGES):
             params = {"limit": PAGE_SIZE, "offset": page * PAGE_SIZE}
+            if country:
+                params["country"] = country
             data = http.get(client, url, params=params).json()
             content = data.get("content") or []
             candidates.extend(item for item in content if _is_candidate(item, now))

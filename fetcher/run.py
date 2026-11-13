@@ -25,6 +25,7 @@ from fetcher.sources.greenhouse import GreenhouseSource
 from fetcher.sources.hackernews import HackerNewsSource
 from fetcher.sources.himalayas import HimalayasSource
 from fetcher.sources.japandev import JapanDevSource
+from fetcher.sources.jazzhr import JazzHRSource
 from fetcher.sources.jobicy import JobicySource
 from fetcher.sources.lever import LeverSource
 from fetcher.sources.manatal import ManatalSource
@@ -62,6 +63,7 @@ def build_sources() -> list[Source]:
         ManatalSource(companies.get("manatal") or {}),
         WordPressSource(companies.get("wordpress") or {}),
         RecruiterboxSource(companies.get("recruiterbox") or {}),
+        JazzHRSource(companies.get("jazzhr") or {}),
         RemoteOKSource(),
         RemotiveSource(),
         WeWorkRemotelySource(),

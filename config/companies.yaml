@@ -83,7 +83,7 @@ teamtailor:
   seedtag.teamtailor.com: Seedtag
   idealista.teamtailor.com: idealista
 
-# Identifiers are case-sensitive.
+# Identifiers are case-sensitive. Add ":bd" to keep only Bangladesh jobs from a global company.
 smartrecruiters:
   BoschGroup: Bosch
   wayfair: Wayfair
@@ -91,6 +91,7 @@ smartrecruiters:
   PolygonTechnology: Polygon Technology
   HishabeeTechnologiesLimited: Hishabee
   shopup: ShopUp
+  DeliveryHero:bd: foodpanda Bangladesh
 
 # careers-page.com/<slug> (Bangladeshi recruiting agencies)
 manatal:
@@ -104,7 +105,10 @@ wordpress:
   # https://www.gigatechltd.com/wp-json/wp/v2/jobpost: Gigatech
   https://www.wpxpo.com/wp-json/wp/v2/job: WPXPO
 
-
 # Recruiterbox / Trakstar Hire client name -> company name
 recruiterbox:
   therap: Therap (BD)
+
+# JazzHR company id -> name. Add ":Country Name" to keep one country only.
+jazzhr:
+  palmpaylimited:Bangladesh: PalmPay Bangladesh
