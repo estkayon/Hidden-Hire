@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.db import get_session
 from app.eligibility import Eligibility, eligibility
 from app.models import Application, Job, Score
-from app.profile import cv_text, has_cv, load_profile
+from app.scoring.source import candidate, has_source
 from app.sync import naive_utc, to_row
 from fetcher.models import Job as JobRecord
 from fetcher.models import make_job_id
@@ -126,7 +126,7 @@ def _to_model[T: JobSummary](
 
 
 def _score_of(session: Session, job_id: str) -> Score | None:
-    return session.get(Score, job_id) if has_cv() else None
+    return session.get(Score, job_id) if has_source() else None
 
 
 @router.get("", response_model=JobList)
@@ -148,7 +148,7 @@ def list_jobs(
     """Without a search query, the saved or the applied filter, only the last 7 days are shown.
     Match filters and sorting apply only when a CV is uploaded."""
     now = datetime.now(UTC)
-    scored = has_cv()
+    scored = has_source()
     seen_at = func.coalesce(Job.posted_at, Job.fetched_at)
     stmt = select(Job, Score).outerjoin(Score, Score.job_id == Job.id)
 
@@ -279,9 +279,10 @@ def create_recruiter_view(job_id: str, session: SessionDep) -> JobDetail:
     job = session.get(Job, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    profile, cv = load_profile(), cv_text()
-    if profile is None or cv is None:
-        raise HTTPException(status_code=409, detail="Upload your CV first.")
+    found = candidate()
+    if found is None:
+        raise HTTPException(status_code=409, detail="Add your CV first.")
+    profile, cv = found
     try:
         total, details = llm_score.judge(job, profile, cv)
     except ValueError as exc:

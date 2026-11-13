@@ -8,10 +8,11 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, init_db
 from app.models import Job, Score
-from app.profile import Profile, cv_text, load_profile
+from app.profile import Profile
 from app.scoring.embed import similarities
 from app.scoring.llm_score import STAGE1_MODEL
 from app.scoring.rules import stage1_score
+from app.scoring.source import candidate
 
 log = logging.getLogger("scoring")
 
@@ -51,11 +52,12 @@ def score_all(session: Session, profile: Profile, text: str) -> int:
 
 
 def run_scoring() -> int | None:
-    """Score all jobs if a CV is uploaded. Returns the number scored, or None without a profile."""
-    profile, text = load_profile(), cv_text()
-    if profile is None or text is None:
-        log.info("no CV uploaded, skipping scoring")
+    """Score all jobs against the master CV (or uploaded CV). Returns the number scored, or None without one."""
+    found = candidate()
+    if found is None:
+        log.info("no CV yet, skipping scoring")
         return None
+    profile, text = found
     init_db()
     with SessionLocal.begin() as session:
         return score_all(session, profile, text)

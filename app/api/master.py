@@ -1,6 +1,6 @@
 """Master CV builder: draft entries from notes or the uploaded CV, merge them, and edit the whole CV."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
 from app.documents.cv import CvData
@@ -29,6 +29,15 @@ class MergeRequest(BaseModel):
 
 class MergeResult(BaseModel):
     report: list[str]
+
+
+def _rescore() -> None:
+    """Recompute Stage 1 match scores after the master CV changes (runs after the response)."""
+    try:
+        from app.scoring.run import run_scoring
+    except ImportError:
+        return
+    run_scoring()
 
 
 def _draft(text: str) -> Draft:
@@ -71,7 +80,7 @@ def draft_from_uploaded_cv() -> Draft:
 
 
 @router.post("/merge", response_model=MergeResult)
-def merge_draft(body: MergeRequest) -> MergeResult:
+def merge_draft(body: MergeRequest, background: BackgroundTasks) -> MergeResult:
     from app.documents.cv import DocumentError
     from app.documents.master import (
         load_master_or_none,
@@ -86,6 +95,7 @@ def merge_draft(body: MergeRequest) -> MergeResult:
     except (ValueError, DocumentError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     save_master(cv)
+    background.add_task(_rescore)
     return MergeResult(report=report)
 
 
@@ -104,7 +114,7 @@ def get_master_cv() -> CvData:
 
 
 @router.put("/cv", response_model=CvData)
-def save_master_cv(cv: CvData) -> CvData:
+def save_master_cv(cv: CvData, background: BackgroundTasks) -> CvData:
     """Save the CV from the editor. Rendering first rejects unsafe links."""
     from app.documents.cv import DocumentError, render_tex
     from app.documents.master import save_master
@@ -114,4 +124,5 @@ def save_master_cv(cv: CvData) -> CvData:
     except DocumentError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     save_master(cv)
+    background.add_task(_rescore)
     return cv

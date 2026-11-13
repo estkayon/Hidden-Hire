@@ -12,14 +12,15 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal, init_db
 from app.llm.client import LLMError, complete, load_settings
 from app.models import Job, Score
-from app.profile import Profile, cv_text, load_profile
+from app.profile import Profile
+from app.scoring.source import candidate
 
 STAGE1_MODEL = "stage1"
 STAGE2_LIMIT = 12
 FRESH_DAYS = 7
 BLOCKER_CAP = 40
 MAX_JOB_CHARS = 3500
-MAX_CV_CHARS = 5000
+MAX_CV_CHARS = 7000
 RATE_LIMIT_WAIT_SECONDS = 60
 # Starting weights from the project plan; tune after real use.
 WEIGHTS = {
@@ -218,10 +219,11 @@ def candidates(session: Session, limit: int) -> list[Job]:
 
 def run_stage2(limit: int = STAGE2_LIMIT) -> int | None:
     """Judge the top jobs. Returns how many were judged, or None without a CV."""
-    profile, cv = load_profile(), cv_text()
-    if profile is None or cv is None:
-        log.info("no CV uploaded, skipping stage 2")
+    found = candidate()
+    if found is None:
+        log.info("no CV yet, skipping stage 2")
         return None
+    profile, cv = found
     init_db()
     pause = load_settings()["scoring"].get("pause_seconds", 0)
     judged = 0
