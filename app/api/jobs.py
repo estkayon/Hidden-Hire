@@ -1,4 +1,4 @@
-"""Job list, search, detail and paste endpoints."""
+"""Job list, search, detail, paste and recruiter-view endpoints."""
 
 import re
 from datetime import UTC, date, datetime, timedelta
@@ -50,6 +50,7 @@ class JobSummary(BaseModel):
     is_new: bool
     country_tier: int
     saved: bool
+    applied_at: datetime | None
     match: int | None
     eligibility: Eligibility
 
@@ -89,16 +90,26 @@ class PasteJob(BaseModel):
 
 
 def _to_model[T: JobSummary](
-    job: Job, model: type[T], now: datetime, saved: bool, score: Score | None
+    job: Job,
+    model: type[T],
+    now: datetime,
+    application: Application | None,
+    score: Score | None,
 ) -> T:
     seen_at = (job.posted_at or job.fetched_at).replace(tzinfo=UTC)
+    applied = application is not None and application.status == "applied"
     data = {
         name: getattr(job, name) for name in model.model_fields if hasattr(job, name)
     }
     data["posted_at"] = job.posted_at.replace(tzinfo=UTC) if job.posted_at else None
     data["is_new"] = now - seen_at <= timedelta(hours=NEW_HOURS)
     data["country_tier"] = country_tier(job.country)
-    data["saved"] = saved
+    data["saved"] = application is not None and application.status == "saved"
+    data["applied_at"] = (
+        application.applied_at.replace(tzinfo=UTC)
+        if applied and application.applied_at
+        else None
+    )
     data["eligibility"] = eligibility(job)
     data["match"] = (
         round(score.final_score) if score and score.final_score is not None else None
@@ -107,7 +118,6 @@ def _to_model[T: JobSummary](
         data["recruiter_view"] = (
             (score.breakdown or {}).get("stage2") if score else None
         )
-
     if HTML_TAG.search(data.get("description") or ""):
         data["description"] = html_to_text(
             data["description"]
@@ -128,13 +138,14 @@ def list_jobs(
     source: Annotated[list[str] | None, Query()] = None,
     posted_within_hours: Annotated[int | None, Query(ge=1, le=240)] = None,
     saved: bool = False,
+    applied: bool = False,
     relevance: Literal["relevant", "other"] | None = None,
     min_match: Annotated[int | None, Query(ge=0, le=100)] = None,
     sort: Literal["newest", "match"] = "newest",
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> JobList:
-    """Without a search query or the saved filter, only the last 7 days are shown.
+    """Without a search query, the saved or the applied filter, only the last 7 days are shown.
     Match filters and sorting apply only when a CV is uploaded."""
     now = datetime.now(UTC)
     scored = has_cv()
@@ -142,7 +153,13 @@ def list_jobs(
     stmt = select(Job, Score).outerjoin(Score, Score.job_id == Job.id)
 
     if saved:
-        stmt = stmt.where(Job.id.in_(select(Application.job_id)))
+        stmt = stmt.where(
+            Job.id.in_(select(Application.job_id).where(Application.status == "saved"))
+        )
+    if applied:
+        stmt = stmt.join(Application, Application.job_id == Job.id).where(
+            Application.status == "applied"
+        )
     if q:
         stmt = stmt.where(
             or_(
@@ -155,7 +172,7 @@ def list_jobs(
         stmt = stmt.where(
             seen_at >= naive_utc(now - timedelta(hours=posted_within_hours))
         )
-    elif not q and not saved:
+    elif not q and not saved and not applied:
         stmt = stmt.where(seen_at >= naive_utc(now - timedelta(days=MAIN_VIEW_DAYS)))
     if country:
         stmt = stmt.where(Job.country.in_([c.upper() for c in country]))
@@ -173,20 +190,27 @@ def list_jobs(
         stmt = stmt.where(Score.final_score >= min_match)
 
     order = [seen_at.desc()]
-    if scored and sort == "match":
+    if applied:
+        order = [Application.applied_at.desc()]
+    elif scored and sort == "match":
         order = [Score.final_score.desc().nulls_last(), seen_at.desc()]
 
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = session.execute(stmt.order_by(*order).limit(limit).offset(offset)).all()
     ids = [job.id for job, _ in rows]
-    saved_ids = set(
-        session.scalars(select(Application.job_id).where(Application.job_id.in_(ids)))
-    )
+    applications = {
+        a.job_id: a
+        for a in session.scalars(select(Application).where(Application.job_id.in_(ids)))
+    }
     return JobList(
         total=total,
         jobs=[
             _to_model(
-                job, JobSummary, now, job.id in saved_ids, score if scored else None
+                job,
+                JobSummary,
+                now,
+                applications.get(job.id),
+                score if scored else None,
             )
             for job, score in rows
         ],
@@ -216,8 +240,13 @@ def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
     job_id = make_job_id("paste", body.text)
     existing = session.get(Job, job_id)
     if existing is not None:
-        saved = session.get(Application, job_id) is not None
-        return _to_model(existing, JobDetail, now, saved, _score_of(session, job_id))
+        return _to_model(
+            existing,
+            JobDetail,
+            now,
+            session.get(Application, job_id),
+            _score_of(session, job_id),
+        )
 
     email = EMAIL.search(body.text)
     link = URL.search(body.text)
@@ -238,7 +267,7 @@ def paste_job(body: PasteJob, session: SessionDep) -> JobDetail:
     row = to_row(record)
     session.add(row)
     session.commit()
-    return _to_model(row, JobDetail, now, saved=False, score=None)
+    return _to_model(row, JobDetail, now, application=None, score=None)
 
 
 @router.post("/{job_id}/recruiter-view", response_model=JobDetail)
@@ -274,7 +303,10 @@ def get_job(job_id: str, session: SessionDep) -> JobDetail:
     job = session.get(Job, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    saved = session.get(Application, job_id) is not None
     return _to_model(
-        job, JobDetail, datetime.now(UTC), saved, _score_of(session, job_id)
+        job,
+        JobDetail,
+        datetime.now(UTC),
+        session.get(Application, job_id),
+        _score_of(session, job_id),
     )

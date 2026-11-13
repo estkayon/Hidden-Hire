@@ -158,6 +158,16 @@ export default function App() {
           </button> */}
           <button
             type="button"
+            className={`nav-link${onList && filters.appliedOnly ? ' active' : ''}`}
+            onClick={() => {
+              updateFilters({ appliedOnly: !(onList && filters.appliedOnly), savedOnly: false })
+              if (!onList) navigate('')
+            }}
+          >
+            Applied
+          </button>
+          <button
+            type="button"
             className={`nav-link${route.view === 'sources' ? ' active' : ''}`}
             onClick={() => navigate('/sources')}
           >
@@ -191,7 +201,13 @@ export default function App() {
         </div>
       )}
 
-      {route.view === 'job' && <JobPage jobId={route.jobId} onToggleSave={toggleSave} />}
+      {route.view === 'job' && (
+        <JobPage
+          jobId={route.jobId}
+          onToggleSave={toggleSave}
+          onAppliedChange={() => setReloadKey((k) => k + 1)}
+        />
+      )}
       {route.view === 'sources' && <HealthPage />}
       {route.view === 'profile' && <ProfilePage onStateChange={(state) => setHasCv(state.has_cv)} />}
 

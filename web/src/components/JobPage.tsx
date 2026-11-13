@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { fetchJob, requestRecruiterView, type Job, type JobDetail } from '../api'
+import { fetchJob, requestRecruiterView, setApplied, type Job, type JobDetail } from '../api'
 import { countryName } from '../countries'
 import { eligibilityInfo } from '../eligibility'
 import {
@@ -19,6 +19,7 @@ import { RecruiterCard, RecruiterModal } from './RecruiterView'
 type Props = {
   jobId: string
   onToggleSave: (job: Job) => void
+  onAppliedChange: () => void
 }
 
 function parseAlsoSeen(entries: string[]): { source: string; url: string }[] {
@@ -29,7 +30,7 @@ function parseAlsoSeen(entries: string[]): { source: string; url: string }[] {
   })
 }
 
-export function JobPage({ jobId, onToggleSave }: Props) {
+export function JobPage({ jobId, onToggleSave, onAppliedChange }: Props) {
   const [job, setJob] = useState<JobDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [judging, setJudging] = useState(false)
@@ -37,6 +38,7 @@ export function JobPage({ jobId, onToggleSave }: Props) {
   const [popup, setPopup] = useState<'recruiter' | 'description' | null>(null)
   const [sideHeight, setSideHeight] = useState<number | null>(null)
   const [clipped, setClipped] = useState(false)
+  const [applyBusy, setApplyBusy] = useState(false)
   const sideRef = useRef<HTMLElement>(null)
   const descRef = useRef<HTMLDivElement>(null)
 
@@ -112,6 +114,18 @@ export function JobPage({ jobId, onToggleSave }: Props) {
     if (!job) return
     onToggleSave(job)
     setJob({ ...job, saved: !job.saved })
+  }
+
+  async function toggleApplied() {
+    if (!job) return
+    setApplyBusy(true)
+    try {
+      const appliedAt = await setApplied(job.id, !job.applied_at)
+      setJob({ ...job, applied_at: appliedAt, saved: appliedAt ? false : true })
+      onAppliedChange()
+    } finally {
+      setApplyBusy(false)
+    }
   }
 
   async function getRecruiterView() {
@@ -191,9 +205,23 @@ export function JobPage({ jobId, onToggleSave }: Props) {
             {!applyUrl && !email && (
               <p className="apply-note">This posting has no application link or email.</p>
             )}
-            <button type="button" className={`btn-ghost${job.saved ? ' is-on' : ''}`} onClick={toggleSave}>
-              {job.saved ? '✓ Saved' : 'Save for later'}
-            </button>
+            {job.applied_at ? (
+              <div className="applied-box">
+                <p>✓ Applied {timeAgo(job.applied_at)}</p>
+                <button type="button" disabled={applyBusy} onClick={toggleApplied}>
+                  Undo
+                </button>
+              </div>
+            ) : (
+              <>
+                <button type="button" className="btn-mark-applied" disabled={applyBusy} onClick={toggleApplied}>
+                  Mark as applied
+                </button>
+                <button type="button" className={`btn-ghost${job.saved ? ' is-on' : ''}`} onClick={toggleSave}>
+                  {job.saved ? '✓ Saved' : 'Save for later'}
+                </button>
+              </>
+            )}
           </div>
 
           <div className="side-card">

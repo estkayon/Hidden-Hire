@@ -22,6 +22,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Hidden Hire", lifespan=lifespan)
 app.include_router(jobs.router)
 app.include_router(tracker.router)
+app.include_router(tracker.applied_router)
 app.include_router(health.router)
 app.include_router(profile.router)
 app.include_router(documents.router)

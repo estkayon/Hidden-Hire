@@ -19,6 +19,7 @@ export type Job = {
   is_new: boolean
   country_tier: number
   saved: boolean
+  applied_at: string | null
   match: number | null
   eligibility: Eligibility
 }
@@ -80,6 +81,7 @@ export type Filters = {
   postedWithin: string
   source: string
   savedOnly: boolean
+  appliedOnly: boolean
   relevance: '' | 'relevant' | 'other'
   minMatch: string
   sort: '' | 'match'
@@ -92,6 +94,7 @@ export const EMPTY_FILTERS: Filters = {
   postedWithin: '',
   source: '',
   savedOnly: false,
+  appliedOnly: false,
   relevance: '',
   minMatch: '',
   sort: '',
@@ -106,6 +109,7 @@ export function toParams(filters: Filters): URLSearchParams {
   if (filters.postedWithin) params.set('posted_within_hours', filters.postedWithin)
   if (filters.source) params.set('source', filters.source)
   if (filters.savedOnly) params.set('saved', 'true')
+  if (filters.appliedOnly) params.set('applied', 'true')
   if (filters.relevance) params.set('relevance', filters.relevance)
   if (filters.minMatch) params.set('min_match', filters.minMatch)
   if (filters.sort) params.set('sort', filters.sort)
@@ -209,6 +213,14 @@ export function generateCv(jobId: string): Promise<CvStatus> {
 
 export function cvDownloadUrl(jobId: string, kind: 'pdf' | 'tex', inline = false): string {
   return `/api/jobs/${encodeURIComponent(jobId)}/cv.${kind}${inline ? '?inline=true' : ''}`
+}
+
+export async function setApplied(jobId: string, applied: boolean): Promise<string | null> {
+  const data = await sendJson<{ applied_at: string | null }>(
+    `/api/applied/${encodeURIComponent(jobId)}`,
+    applied ? 'POST' : 'DELETE',
+  )
+  return data.applied_at
 }
 
 export function fetchProfile(): Promise<ProfileState> {

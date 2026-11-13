@@ -57,17 +57,23 @@ export function JobCard({ job, index, onOpen, onToggleSave }: Props) {
             <Icon name="clock" />
             {job.posted_at ? timeAgo(job.posted_at) : 'Date not stated'}
           </span>
-          <button
-            type="button"
-            className={`jc-save${job.saved ? ' is-saved' : ''}`}
-            aria-pressed={job.saved}
-            aria-label={job.saved ? 'Remove from saved' : 'Save job'}
-            onClick={() => onToggleSave(job)}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.2L5 21V4.5a1 1 0 0 1 1-1z" />
-            </svg>
-          </button>
+          {job.applied_at ? (
+            <span className="jc-applied" title={`Applied ${timeAgo(job.applied_at)}`}>
+              ✓ Applied
+            </span>
+          ) : (
+            <button
+              type="button"
+              className={`jc-save${job.saved ? ' is-saved' : ''}`}
+              aria-pressed={job.saved}
+              aria-label={job.saved ? 'Remove from saved' : 'Save job'}
+              onClick={() => onToggleSave(job)}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.2L5 21V4.5a1 1 0 0 1 1-1z" />
+              </svg>
+            </button>
+          )}
         </div>
       </header>
 

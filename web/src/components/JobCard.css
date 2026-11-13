@@ -113,6 +113,19 @@
   white-space: nowrap;
 }
 
+.jc-applied {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgb(60 154 107 / 0.14);
+  color: #1c6b47;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .jc-save {
   display: grid;
   place-items: center;
