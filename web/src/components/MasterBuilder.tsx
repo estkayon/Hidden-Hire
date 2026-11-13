@@ -4,9 +4,21 @@ import {
   draftFromUploadedCv,
   fetchMaster,
   mergeDraft,
+  type CvData,
   type MasterDraft,
   type MasterSummary,
 } from '../api'
+import {
+  CvListSections,
+  EMPTY_CV,
+  HeaderSection,
+  LIST_SECTIONS,
+  SummarySection,
+  cleanCv,
+  validate,
+  type ListKey,
+  type SetCv,
+} from './CvEditorPage'
 import './MasterBuilder.css'
 
 const MAX_CHARS = 12_000
@@ -20,6 +32,8 @@ const PLACEHOLDER = `Project name | Tech stack
 
 GitHub: https://github.com/...`
 
+type Review = { cv: CvData; flags: string[]; sections: ListKey[]; withHeader: boolean }
+
 function summaryText(master: MasterSummary | null): string {
   if (!master) return ''
   if (!master.exists) return 'No master CV yet. Add your details here or open the CV editor.'
@@ -30,7 +44,7 @@ function summaryText(master: MasterSummary | null): string {
 export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
   const [master, setMaster] = useState<MasterSummary | null>(null)
   const [text, setText] = useState('')
-  const [draft, setDraft] = useState<MasterDraft | null>(null)
+  const [review, setReview] = useState<Review | null>(null)
   const [report, setReport] = useState<string[]>([])
   const [busy, setBusy] = useState<'draft' | 'import' | 'merge' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -68,23 +82,38 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
     setError(null)
   }
 
+  function startReview({ draft, flags }: MasterDraft) {
+    const cv: CvData = { ...EMPTY_CV, ...draft, header: draft.header ?? EMPTY_CV.header }
+    const sections = LIST_SECTIONS.filter((key) => cv[key].length > 0)
+    const withHeader = !master?.exists
+    if (sections.length === 0 && !withHeader) {
+      setError('Nothing new was found in the text to add.')
+      return
+    }
+    setReview({ cv, flags, sections, withHeader })
+  }
+
   async function createDraft(fromCv: boolean) {
     setReport([])
     const result = await run(fromCv ? 'import' : 'draft', () =>
       fromCv ? draftFromUploadedCv() : draftFromNotes(text),
     )
-    if (result) setDraft(result)
+    if (result) startReview(result)
   }
 
   async function addToCv() {
-    if (!draft) return
-    const result = await run('merge', () => mergeDraft(draft.yaml))
+    if (!review) return
+    const clean = cleanCv(review.cv)
+    const result = await run('merge', () => mergeDraft({ ...clean, header: review.withHeader ? clean.header : null }))
     if (!result) return
     setReport(result.report)
-    setDraft(null)
+    setReview(null)
     setText('')
     fetchMaster().then(setMaster).catch(() => undefined)
   }
+
+  const setDraft: SetCv = (key, value) => setReview((r) => (r ? { ...r, cv: { ...r.cv, [key]: value } } : r))
+  const errors = review ? validate(review.cv, review.withHeader) : []
 
   return (
     <section className="profile-card mb-card">
@@ -101,7 +130,7 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
         </div>
       )}
 
-      {!draft ? (
+      {!review ? (
         <>
           <textarea
             className="mb-input"
@@ -148,27 +177,36 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
       ) : (
         <>
           <p className="mb-label">Check and edit the draft, then add it.</p>
-          {draft.flags.length > 0 && (
+          {review.flags.length > 0 && (
             <div className="mb-flags">
               <p>Removed because they were not in your text</p>
               <ul>
-                {draft.flags.map((flag, i) => (
+                {review.flags.map((flag, i) => (
                   <li key={i}>{flag}</li>
                 ))}
               </ul>
             </div>
           )}
-          <textarea
-            className="mb-input mb-yaml"
-            value={draft.yaml}
-            spellCheck={false}
-            onChange={(e) => setDraft({ ...draft, yaml: e.target.value })}
-          />
+          <div className="mb-form">
+            {review.withHeader && <HeaderSection cv={review.cv} set={setDraft} />}
+            {review.withHeader && <SummarySection cv={review.cv} set={setDraft} />}
+            <CvListSections cv={review.cv} set={setDraft} sections={review.sections} openFirst />
+          </div>
+          {errors.length > 0 && (
+            <div className="mb-flags">
+              <p>Fix before adding</p>
+              <ul>
+                {errors.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="mb-actions">
-            <button type="button" className="btn-primary" disabled={busy !== null} onClick={addToCv}>
+            <button type="button" className="btn-primary" disabled={busy !== null || errors.length > 0} onClick={addToCv}>
               {busy === 'merge' ? 'Adding…' : 'Add to my CV'}
             </button>
-            <button type="button" className="btn-secondary" disabled={busy !== null} onClick={() => setDraft(null)}>
+            <button type="button" className="btn-secondary" disabled={busy !== null} onClick={() => setReview(null)}>
               Discard
             </button>
           </div>

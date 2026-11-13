@@ -19,12 +19,12 @@ class DraftRequest(BaseModel):
 
 
 class Draft(BaseModel):
-    yaml: str
+    draft: dict
     flags: list[str]
 
 
 class MergeRequest(BaseModel):
-    yaml: str = Field(min_length=1, max_length=60_000)
+    draft: dict
 
 
 class MergeResult(BaseModel):
@@ -32,7 +32,7 @@ class MergeResult(BaseModel):
 
 
 def _draft(text: str) -> Draft:
-    from app.documents.master import draft_from_text, draft_to_yaml
+    from app.documents.master import draft_from_text
     from app.llm.client import LLMError
 
     try:
@@ -46,7 +46,7 @@ def _draft(text: str) -> Draft:
         raise HTTPException(
             status_code=502, detail="The model gave an unusable answer. Try again."
         ) from exc
-    return Draft(yaml=draft_to_yaml(draft), flags=flags)
+    return Draft(draft=draft.model_dump(), flags=flags)
 
 
 @router.get("", response_model=MasterSummary)
@@ -81,7 +81,7 @@ def merge_draft(body: MergeRequest) -> MergeResult:
     )
 
     try:
-        draft = parse_draft(body.yaml)
+        draft = parse_draft(body.draft)
         cv, report = merge(load_master_or_none(), draft)
     except (ValueError, DocumentError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

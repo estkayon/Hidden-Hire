@@ -224,7 +224,6 @@ export async function setApplied(jobId: string, applied: boolean): Promise<strin
 }
 
 export type MasterSummary = { exists: boolean; counts: Record<string, number> }
-export type MasterDraft = { yaml: string; flags: string[] }
 
 export function fetchMaster(): Promise<MasterSummary> {
   return getJson('/api/master')
@@ -238,10 +237,9 @@ export function draftFromUploadedCv(): Promise<MasterDraft> {
   return sendJson('/api/master/draft-from-cv', 'POST')
 }
 
-export function mergeDraft(yaml: string): Promise<{ report: string[] }> {
-  return sendJson('/api/master/merge', 'POST', { yaml })
+export function mergeDraft(draft: CvDraft): Promise<{ report: string[] }> {
+  return sendJson('/api/master/merge', 'POST', { draft })
 }
-
 export type CvLink = { label: string; url: string }
 
 export type CvData = {
@@ -270,6 +268,9 @@ export type CvData = {
   volunteering: { name: string; date: string; url: string; bullets: string[] }[]
   references: { name: string; lines: string[]; phone: string; email: string }[]
 }
+
+export type CvDraft = Omit<CvData, 'header'> & { header: CvData['header'] | null }
+export type MasterDraft = { draft: CvDraft; flags: string[] }
 
 export function fetchMasterCv(): Promise<CvData> {
   return getJson('/api/master/cv')

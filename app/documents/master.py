@@ -115,21 +115,10 @@ def draft_from_text(text: str) -> tuple[CvDraft, list[str]]:
     return check_draft(draft, text)
 
 
-def draft_to_yaml(draft: CvDraft) -> str:
-    return yaml.safe_dump(
-        draft.model_dump(exclude_defaults=True),
-        sort_keys=False,
-        allow_unicode=True,
-        width=1000,
-    )
-
-
-def parse_draft(text: str) -> CvDraft:
-    """The reviewed draft YAML. Raises ValueError with a readable reason."""
+def parse_draft(data: dict) -> CvDraft:
+    """The reviewed draft from the editor. Raises ValueError with a readable reason."""
     try:
-        return CvDraft.model_validate(yaml.safe_load(text) or {})
-    except yaml.YAMLError as exc:
-        raise ValueError("The YAML is not valid. Check the indentation.") from exc
+        return CvDraft.model_validate(data)
     except ValidationError as exc:
         first = exc.errors()[0]
         place = ".".join(str(part) for part in first["loc"])

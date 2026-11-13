@@ -3,8 +3,20 @@ import { fetchMasterCv, saveMasterCv, type CvData, type CvLink } from '../api'
 import { ChipInput } from './ChipInput'
 import './CvEditor.css'
 
-type ListKey = Exclude<keyof CvData, 'header' | 'summary'>
+export type ListKey = Exclude<keyof CvData, 'header' | 'summary'>
+export type SetCv = <K extends keyof CvData>(key: K, value: CvData[K]) => void
 type Item<K extends ListKey> = CvData[K][number]
+
+export const LIST_SECTIONS: ListKey[] = [
+  'skills',
+  'experience',
+  'projects',
+  'research',
+  'education',
+  'certifications',
+  'volunteering',
+  'references',
+]
 
 const TRACKS = [
   { value: 'software', label: 'Software / backend' },
@@ -12,7 +24,7 @@ const TRACKS = [
   { value: 'ml', label: 'ML / AI / data' },
 ]
 
-const EMPTY_CV: CvData = {
+export const EMPTY_CV: CvData = {
   header: { name: '', location: '', phone: '', email: '', links: [] },
   summary: '',
   skills: [],
@@ -57,7 +69,7 @@ function cleanList(values: string[]): string[] {
 }
 
 /** Drop empty bullets, lines and links before saving. */
-function cleanCv(cv: CvData): CvData {
+export function cleanCv(cv: CvData): CvData {
   return {
     ...cv,
     header: { ...cv.header, links: cleanLinks(cv.header.links) },
@@ -75,7 +87,7 @@ function cleanCv(cv: CvData): CvData {
   }
 }
 
-function validate(cv: CvData): string[] {
+export function validate(cv: CvData, requireHeader = true): string[] {
   const errors: string[] = []
   const need = (ok: boolean, message: string) => {
     if (!ok) errors.push(message)
@@ -83,8 +95,10 @@ function validate(cv: CvData): string[] {
   const linksOk = (links: CvLink[], where: string) =>
     links.forEach((l) => need(blank(l.url) || isUrl(l.url), `${where}: a link must start with https://`))
 
-  need(!blank(cv.header.name), 'Header: add your name')
-  linksOk(cv.header.links, 'Header')
+  if (requireHeader) {
+    need(!blank(cv.header.name), 'Header: add your name')
+    linksOk(cv.header.links, 'Header')
+  }
   cv.skills.forEach((g, i) => {
     need(!blank(g.name), `Skill group ${i + 1}: add a name`)
     need(cleanList(g.items).length > 0, `Skill group ${g.name || i + 1}: add at least one skill`)
@@ -107,7 +121,10 @@ function validate(cv: CvData): string[] {
     linksOk(r.links, where)
   })
   cv.education.forEach((e, i) =>
-    need(!blank(e.degree) && !blank(e.institution) && !blank(e.dates), `Education ${i + 1}: add degree, institution and dates`),
+    need(
+      !blank(e.degree) && !blank(e.institution) && !blank(e.dates),
+      `Education ${i + 1}: add degree, institution and dates`,
+    ),
   )
   cv.certifications.forEach((c, i) => {
     need(!blank(c.name), `Certification ${i + 1}: add a name`)
@@ -185,7 +202,8 @@ function Bullets({ values, onChange }: { values: string[]; onChange: (values: st
 }
 
 function Links({ values, onChange }: { values: CvLink[]; onChange: (values: CvLink[]) => void }) {
-  const update = (i: number, patch: Partial<CvLink>) => onChange(values.map((l, j) => (j === i ? { ...l, ...patch } : l)))
+  const update = (i: number, patch: Partial<CvLink>) =>
+    onChange(values.map((l, j) => (j === i ? { ...l, ...patch } : l)))
   return (
     <div className="cv-block is-wide">
       <span className="cv-sub">Links</span>
@@ -205,7 +223,12 @@ function Links({ values, onChange }: { values: CvLink[]; onChange: (values: CvLi
             maxLength={400}
             onChange={(e) => update(i, { url: e.target.value })}
           />
-          <button type="button" className="cv-x" aria-label="Remove link" onClick={() => onChange(values.filter((_, j) => j !== i))}>
+          <button
+            type="button"
+            className="cv-x"
+            aria-label="Remove link"
+            onClick={() => onChange(values.filter((_, j) => j !== i))}
+          >
             ×
           </button>
         </div>
@@ -217,7 +240,9 @@ function Links({ values, onChange }: { values: CvLink[]; onChange: (values: CvLi
   )
 }
 
-function Chips({ label, values, onChange, commaAdds }: { label: string; values: string[]; onChange: (v: string[]) => void; commaAdds?: boolean }) {
+type ChipsProps = { label: string; values: string[]; onChange: (v: string[]) => void; commaAdds?: boolean }
+
+function Chips({ label, values, onChange, commaAdds }: ChipsProps) {
   return (
     <div className="cv-block is-wide">
       <span className="cv-sub">{label}</span>
@@ -235,12 +260,18 @@ type ListProps<K extends ListKey> = {
   heading: (item: Item<K>, index: number) => string
   onChange: (items: Item<K>[]) => void
   render: (item: Item<K>, update: (patch: Partial<Item<K>>) => void) => ReactNode
+  openFirst?: boolean
 }
 
-function ItemList<K extends ListKey>({ title, hint, addLabel, items, makeItem, heading, onChange, render }: ListProps<K>) {
-  const [open, setOpen] = useState<number | null>(null)
+function ItemList<K extends ListKey>(props: ListProps<K>) {
+  const { title, hint, addLabel, items, makeItem, heading, onChange, render, openFirst } = props
+  const [open, setOpen] = useState<number | null>(openFirst && items.length ? 0 : null)
   const update = (i: number, patch: Partial<Item<K>>) =>
     onChange(items.map((item, j) => (j === i ? ({ ...item, ...patch } as Item<K>) : item)))
+  const shift = (i: number, step: number) => {
+    setOpen(null)
+    onChange(move(items, i, step))
+  }
 
   return (
     <section className="profile-card cv-section">
@@ -260,15 +291,10 @@ function ItemList<K extends ListKey>({ title, hint, addLabel, items, makeItem, h
               {heading(item, i) || 'Untitled'}
             </button>
             <div className="cv-mini">
-              <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => { setOpen(null); onChange(move(items, i, -1)) }}>
+              <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => shift(i, -1)}>
                 ↑
               </button>
-              <button
-                type="button"
-                aria-label="Move down"
-                disabled={i === items.length - 1}
-                onClick={() => { setOpen(null); onChange(move(items, i, 1)) }}
-              >
+              <button type="button" aria-label="Move down" disabled={i === items.length - 1} onClick={() => shift(i, 1)}>
                 ↓
               </button>
               <button
@@ -299,6 +325,267 @@ function ItemList<K extends ListKey>({ title, hint, addLabel, items, makeItem, h
         + {addLabel}
       </button>
     </section>
+  )
+}
+
+export function HeaderSection({ cv, set }: { cv: CvData; set: SetCv }) {
+  const header = cv.header
+  return (
+    <section className="profile-card cv-section">
+      <h2 className="card-heading-title">Header</h2>
+      <div className="cv-grid">
+        <Field label="Full name" required wide value={header.name} onChange={(name) => set('header', { ...header, name })} />
+        <Field label="Location" value={header.location} onChange={(location) => set('header', { ...header, location })} />
+        <Field label="Phone" value={header.phone} onChange={(phone) => set('header', { ...header, phone })} />
+        <Field label="Email" wide value={header.email} onChange={(email) => set('header', { ...header, email })} />
+        <Links values={header.links} onChange={(links) => set('header', { ...header, links })} />
+      </div>
+    </section>
+  )
+}
+
+export function SummarySection({ cv, set }: { cv: CvData; set: SetCv }) {
+  return (
+    <section className="profile-card cv-section">
+      <h2 className="card-heading-title">Professional summary</h2>
+      <textarea
+        className="cv-summary"
+        rows={5}
+        maxLength={1200}
+        value={cv.summary}
+        onChange={(e) => set('summary', e.target.value)}
+      />
+    </section>
+  )
+}
+
+type SectionsProps = { cv: CvData; set: SetCv; sections?: ListKey[]; openFirst?: boolean }
+
+export function CvListSections({ cv, set, sections = LIST_SECTIONS, openFirst = false }: SectionsProps) {
+  const show = (key: ListKey) => sections.includes(key)
+  const toolsLabel = 'Tools used (not printed, used to check tailored CVs)'
+
+  return (
+    <>
+      {show('skills') && (
+        <ItemList<'skills'>
+          title="Skills"
+          addLabel="Add skill group"
+          items={cv.skills}
+          makeItem={NEW_ITEM.skills}
+          heading={(g) => g.name}
+          onChange={(skills) => set('skills', skills)}
+          openFirst={openFirst}
+          render={(g, update) => (
+            <>
+              <Field
+                label="Group name"
+                required
+                wide
+                value={g.name}
+                onChange={(name) => update({ name })}
+                placeholder="e.g. Backend Development"
+              />
+              <Chips label="Skills" values={g.items} onChange={(items) => update({ items })} commaAdds={false} />
+            </>
+          )}
+        />
+      )}
+
+      {show('experience') && (
+        <ItemList<'experience'>
+          title="Experience"
+          addLabel="Add experience"
+          items={cv.experience}
+          makeItem={NEW_ITEM.experience}
+          heading={(e) => [e.title, e.organization].filter(Boolean).join(' · ')}
+          onChange={(experience) => set('experience', experience)}
+          openFirst={openFirst}
+          render={(e, update) => (
+            <>
+              <Field label="Job title" required value={e.title} onChange={(title) => update({ title })} />
+              <Field
+                label="Organization"
+                required
+                value={e.organization}
+                onChange={(organization) => update({ organization })}
+              />
+              <Field
+                label="Dates"
+                required
+                value={e.dates}
+                onChange={(dates) => update({ dates })}
+                placeholder="Feb 2026 – Apr 2026"
+              />
+              <Field label="Location" value={e.location} onChange={(location) => update({ location })} />
+              <Chips label={toolsLabel} values={e.stack} onChange={(stack) => update({ stack })} />
+              <Bullets values={e.bullets} onChange={(bullets) => update({ bullets })} />
+            </>
+          )}
+        />
+      )}
+
+      {show('projects') && (
+        <ItemList<'projects'>
+          title="Projects"
+          hint="Pinned projects appear first in every tailored CV. Two more are chosen by job type."
+          addLabel="Add project"
+          items={cv.projects}
+          makeItem={NEW_ITEM.projects}
+          heading={(p) => `${p.pinned ? '📌 ' : ''}${p.name}`}
+          onChange={(projects) => set('projects', projects)}
+          openFirst={openFirst}
+          render={(p, update) => (
+            <>
+              <Field label="Project name" required wide value={p.name} onChange={(name) => update({ name })} />
+              <div className="cv-block is-wide cv-options">
+                <label className="cv-check">
+                  <input type="checkbox" checked={p.pinned} onChange={(e) => update({ pinned: e.target.checked })} />
+                  Pinned (always shown)
+                </label>
+                {!p.pinned && (
+                  <div className="cv-tracks">
+                    <span className="cv-sub">Use for jobs in</span>
+                    {TRACKS.map((t) => (
+                      <label key={t.value} className="cv-check">
+                        <input
+                          type="checkbox"
+                          checked={p.tracks.includes(t.value)}
+                          onChange={(e) =>
+                            update({
+                              tracks: e.target.checked ? [...p.tracks, t.value] : p.tracks.filter((x) => x !== t.value),
+                            })
+                          }
+                        />
+                        {t.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Links values={p.links} onChange={(links) => update({ links })} />
+              <Chips label={toolsLabel} values={p.stack} onChange={(stack) => update({ stack })} />
+              <Bullets values={p.bullets} onChange={(bullets) => update({ bullets })} />
+            </>
+          )}
+        />
+      )}
+
+      {show('research') && (
+        <ItemList<'research'>
+          title="Research"
+          addLabel="Add research"
+          items={cv.research}
+          makeItem={NEW_ITEM.research}
+          heading={(r) => r.title}
+          onChange={(research) => set('research', research)}
+          openFirst={openFirst}
+          render={(r, update) => (
+            <>
+              <Field label="Title" required wide value={r.title} onChange={(title) => update({ title })} />
+              <Field
+                label="Subtitle"
+                wide
+                value={r.subtitle}
+                onChange={(subtitle) => update({ subtitle })}
+                placeholder="Undergraduate Thesis – University"
+              />
+              <Links values={r.links} onChange={(links) => update({ links })} />
+              <Bullets values={r.bullets} onChange={(bullets) => update({ bullets })} />
+            </>
+          )}
+        />
+      )}
+
+      {show('education') && (
+        <ItemList<'education'>
+          title="Education"
+          addLabel="Add education"
+          items={cv.education}
+          makeItem={NEW_ITEM.education}
+          heading={(e) => e.degree}
+          onChange={(education) => set('education', education)}
+          openFirst={openFirst}
+          render={(e, update) => (
+            <>
+              <Field label="Degree" required wide value={e.degree} onChange={(degree) => update({ degree })} />
+              <Field
+                label="Institution"
+                required
+                wide
+                value={e.institution}
+                onChange={(institution) => update({ institution })}
+              />
+              <Field label="Dates" required value={e.dates} onChange={(dates) => update({ dates })} />
+              <Field label="Grade" value={e.grade} onChange={(grade) => update({ grade })} placeholder="CGPA: 3.54 / 4.00" />
+              <Field label="Location" wide value={e.location} onChange={(location) => update({ location })} />
+            </>
+          )}
+        />
+      )}
+
+      {show('certifications') && (
+        <ItemList<'certifications'>
+          title="Certifications"
+          addLabel="Add certification"
+          items={cv.certifications}
+          makeItem={NEW_ITEM.certifications}
+          heading={(c) => c.name}
+          onChange={(certifications) => set('certifications', certifications)}
+          openFirst={openFirst}
+          render={(c, update) => (
+            <>
+              <Field label="Name" required wide value={c.name} onChange={(name) => update({ name })} />
+              <Field label="Issuer" value={c.issuer} onChange={(issuer) => update({ issuer })} />
+              <Field label="Link" url value={c.url} onChange={(url) => update({ url })} placeholder="https://" />
+            </>
+          )}
+        />
+      )}
+
+      {show('volunteering') && (
+        <ItemList<'volunteering'>
+          title="Volunteering"
+          addLabel="Add volunteering"
+          items={cv.volunteering}
+          makeItem={NEW_ITEM.volunteering}
+          heading={(v) => v.name}
+          onChange={(volunteering) => set('volunteering', volunteering)}
+          openFirst={openFirst}
+          render={(v, update) => (
+            <>
+              <Field label="Name" required wide value={v.name} onChange={(name) => update({ name })} />
+              <Field label="Date" value={v.date} onChange={(date) => update({ date })} placeholder="Apr 2025" />
+              <Field label="Link" url value={v.url} onChange={(url) => update({ url })} placeholder="https://" />
+              <Bullets values={v.bullets} onChange={(bullets) => update({ bullets })} />
+            </>
+          )}
+        />
+      )}
+
+      {show('references') && (
+        <ItemList<'references'>
+          title="References"
+          addLabel="Add reference"
+          items={cv.references}
+          makeItem={NEW_ITEM.references}
+          heading={(r) => r.name}
+          onChange={(references) => set('references', references)}
+          openFirst={openFirst}
+          render={(r, update) => (
+            <>
+              <Field label="Name" required wide value={r.name} onChange={(name) => update({ name })} />
+              <label className="cv-field is-wide">
+                <span>Title, organization and address (one per line)</span>
+                <textarea rows={4} value={r.lines.join('\n')} onChange={(e) => update({ lines: e.target.value.split('\n') })} />
+              </label>
+              <Field label="Phone" value={r.phone} onChange={(phone) => update({ phone })} />
+              <Field label="Email" value={r.email} onChange={(email) => update({ email })} />
+            </>
+          )}
+        />
+      )}
+    </>
   )
 }
 
@@ -341,7 +628,7 @@ export function CvEditorPage() {
     )
   }
 
-  const set = <K extends keyof CvData>(key: K, value: CvData[K]) => setCv({ ...cv, [key]: value })
+  const set: SetCv = (key, value) => setCv({ ...cv, [key]: value })
   const errors = validate(cv)
   const dirty = JSON.stringify(cv) !== original
 
@@ -374,184 +661,9 @@ export function CvEditorPage() {
 
       {message && <p className={`toast is-${message.kind}`}>{message.text}</p>}
 
-      <section className="profile-card cv-section">
-        <h2 className="card-heading-title">Header</h2>
-        <div className="cv-grid">
-          <Field label="Full name" required wide value={cv.header.name} onChange={(name) => set('header', { ...cv.header, name })} />
-          <Field label="Location" value={cv.header.location} onChange={(location) => set('header', { ...cv.header, location })} />
-          <Field label="Phone" value={cv.header.phone} onChange={(phone) => set('header', { ...cv.header, phone })} />
-          <Field label="Email" wide value={cv.header.email} onChange={(email) => set('header', { ...cv.header, email })} />
-          <Links values={cv.header.links} onChange={(links) => set('header', { ...cv.header, links })} />
-        </div>
-      </section>
-
-      <section className="profile-card cv-section">
-        <h2 className="card-heading-title">Professional summary</h2>
-        <textarea className="cv-summary" rows={5} maxLength={1200} value={cv.summary} onChange={(e) => set('summary', e.target.value)} />
-      </section>
-
-      <ItemList<'skills'>
-        title="Skills"
-        addLabel="Add skill group"
-        items={cv.skills}
-        makeItem={NEW_ITEM.skills}
-        heading={(g) => g.name}
-        onChange={(skills) => set('skills', skills)}
-        render={(g, update) => (
-          <>
-            <Field label="Group name" required wide value={g.name} onChange={(name) => update({ name })} placeholder="e.g. Backend Development" />
-            <Chips label="Skills" values={g.items} onChange={(items) => update({ items })} commaAdds={false} />
-          </>
-        )}
-      />
-
-      <ItemList<'experience'>
-        title="Experience"
-        addLabel="Add experience"
-        items={cv.experience}
-        makeItem={NEW_ITEM.experience}
-        heading={(e) => [e.title, e.organization].filter(Boolean).join(' · ')}
-        onChange={(experience) => set('experience', experience)}
-        render={(e, update) => (
-          <>
-            <Field label="Job title" required value={e.title} onChange={(title) => update({ title })} />
-            <Field label="Organization" required value={e.organization} onChange={(organization) => update({ organization })} />
-            <Field label="Dates" required value={e.dates} onChange={(dates) => update({ dates })} placeholder="Feb 2026 – Apr 2026" />
-            <Field label="Location" value={e.location} onChange={(location) => update({ location })} />
-            <Chips label="Tools used (not printed, used to check tailored CVs)" values={e.stack} onChange={(stack) => update({ stack })} />
-            <Bullets values={e.bullets} onChange={(bullets) => update({ bullets })} />
-          </>
-        )}
-      />
-
-      <ItemList<'projects'>
-        title="Projects"
-        hint="Pinned projects appear first in every tailored CV. Two more are chosen by job type."
-        addLabel="Add project"
-        items={cv.projects}
-        makeItem={NEW_ITEM.projects}
-        heading={(p) => `${p.pinned ? '📌 ' : ''}${p.name}`}
-        onChange={(projects) => set('projects', projects)}
-        render={(p, update) => (
-          <>
-            <Field label="Project name" required wide value={p.name} onChange={(name) => update({ name })} />
-            <div className="cv-block is-wide cv-options">
-              <label className="cv-check">
-                <input type="checkbox" checked={p.pinned} onChange={(e) => update({ pinned: e.target.checked })} />
-                Pinned (always shown)
-              </label>
-              {!p.pinned && (
-                <div className="cv-tracks">
-                  <span className="cv-sub">Use for jobs in</span>
-                  {TRACKS.map((t) => (
-                    <label key={t.value} className="cv-check">
-                      <input
-                        type="checkbox"
-                        checked={p.tracks.includes(t.value)}
-                        onChange={(e) =>
-                          update({ tracks: e.target.checked ? [...p.tracks, t.value] : p.tracks.filter((x) => x !== t.value) })
-                        }
-                      />
-                      {t.label}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-            <Links values={p.links} onChange={(links) => update({ links })} />
-            <Chips label="Tools used (not printed, used to check tailored CVs)" values={p.stack} onChange={(stack) => update({ stack })} />
-            <Bullets values={p.bullets} onChange={(bullets) => update({ bullets })} />
-          </>
-        )}
-      />
-
-      <ItemList<'research'>
-        title="Research"
-        addLabel="Add research"
-        items={cv.research}
-        makeItem={NEW_ITEM.research}
-        heading={(r) => r.title}
-        onChange={(research) => set('research', research)}
-        render={(r, update) => (
-          <>
-            <Field label="Title" required wide value={r.title} onChange={(title) => update({ title })} />
-            <Field label="Subtitle" wide value={r.subtitle} onChange={(subtitle) => update({ subtitle })} placeholder="Undergraduate Thesis – University" />
-            <Links values={r.links} onChange={(links) => update({ links })} />
-            <Bullets values={r.bullets} onChange={(bullets) => update({ bullets })} />
-          </>
-        )}
-      />
-
-      <ItemList<'education'>
-        title="Education"
-        addLabel="Add education"
-        items={cv.education}
-        makeItem={NEW_ITEM.education}
-        heading={(e) => e.degree}
-        onChange={(education) => set('education', education)}
-        render={(e, update) => (
-          <>
-            <Field label="Degree" required wide value={e.degree} onChange={(degree) => update({ degree })} />
-            <Field label="Institution" required wide value={e.institution} onChange={(institution) => update({ institution })} />
-            <Field label="Dates" required value={e.dates} onChange={(dates) => update({ dates })} />
-            <Field label="Grade" value={e.grade} onChange={(grade) => update({ grade })} placeholder="CGPA: 3.54 / 4.00" />
-            <Field label="Location" wide value={e.location} onChange={(location) => update({ location })} />
-          </>
-        )}
-      />
-
-      <ItemList<'certifications'>
-        title="Certifications"
-        addLabel="Add certification"
-        items={cv.certifications}
-        makeItem={NEW_ITEM.certifications}
-        heading={(c) => c.name}
-        onChange={(certifications) => set('certifications', certifications)}
-        render={(c, update) => (
-          <>
-            <Field label="Name" required wide value={c.name} onChange={(name) => update({ name })} />
-            <Field label="Issuer" value={c.issuer} onChange={(issuer) => update({ issuer })} />
-            <Field label="Link" url value={c.url} onChange={(url) => update({ url })} placeholder="https://" />
-          </>
-        )}
-      />
-
-      <ItemList<'volunteering'>
-        title="Volunteering"
-        addLabel="Add volunteering"
-        items={cv.volunteering}
-        makeItem={NEW_ITEM.volunteering}
-        heading={(v) => v.name}
-        onChange={(volunteering) => set('volunteering', volunteering)}
-        render={(v, update) => (
-          <>
-            <Field label="Name" required wide value={v.name} onChange={(name) => update({ name })} />
-            <Field label="Date" value={v.date} onChange={(date) => update({ date })} placeholder="Apr 2025" />
-            <Field label="Link" url value={v.url} onChange={(url) => update({ url })} placeholder="https://" />
-            <Bullets values={v.bullets} onChange={(bullets) => update({ bullets })} />
-          </>
-        )}
-      />
-
-      <ItemList<'references'>
-        title="References"
-        addLabel="Add reference"
-        items={cv.references}
-        makeItem={NEW_ITEM.references}
-        heading={(r) => r.name}
-        onChange={(references) => set('references', references)}
-        render={(r, update) => (
-          <>
-            <Field label="Name" required wide value={r.name} onChange={(name) => update({ name })} />
-            <label className="cv-field is-wide">
-              <span>Title, organization and address (one per line)</span>
-              <textarea rows={4} value={r.lines.join('\n')} onChange={(e) => update({ lines: e.target.value.split('\n') })} />
-            </label>
-            <Field label="Phone" value={r.phone} onChange={(phone) => update({ phone })} />
-            <Field label="Email" value={r.email} onChange={(email) => update({ email })} />
-          </>
-        )}
-      />
+      <HeaderSection cv={cv} set={set} />
+      <SummarySection cv={cv} set={set} />
+      <CvListSections cv={cv} set={set} />
 
       <div className="save-bar">
         <div className="cv-status">

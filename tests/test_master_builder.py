@@ -83,10 +83,14 @@ def test_merge_without_master_needs_a_name():
 
 
 def test_parse_draft_reports_readable_errors():
-    with pytest.raises(ValueError, match="indentation"):
-        parse_draft("projects: [\n  - name: x")
     with pytest.raises(ValueError, match="projects"):
-        parse_draft("projects:\n  - links: []\n")
+        parse_draft({"projects": [{"links": []}]})
+    assert (
+        parse_draft({"projects": [{"name": "X", "bullets": ["Built X."]}]})
+        .projects[0]
+        .name
+        == "X"
+    )
 
 
 def test_save_keeps_a_backup(tmp_path):

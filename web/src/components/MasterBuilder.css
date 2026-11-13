@@ -32,16 +32,6 @@
   transform: translateY(-1px);
 }
 
-.mb-master {
-  min-height: 560px;
-}
-
-.mb-saved {
-  margin: 12px 0 0;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #1c6b47;
-}
 
 .mb-input {
   width: 100%;
@@ -64,11 +54,13 @@
   box-shadow: 0 0 0 3px rgb(169 224 241 / 0.6);
 }
 
-.mb-yaml {
-  min-height: 320px;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 0.85rem;
-  white-space: pre;
+/* Draft review reuses the CV editor sections without the nested card frame */
+.mb-form .cv-section {
+  margin-bottom: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
 }
 
 .mb-row {
