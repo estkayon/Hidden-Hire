@@ -1,13 +1,25 @@
 # Copy to config/settings.yaml (git-ignored) to change models.
-# Model strings use LiteLLM's "provider/model" format; API keys come from .env.
+# Each task tries its models in order and moves to the next one on any error (rate limit, outage).
+# Plain entries use LiteLLM's "provider/model" format with keys from .env.
+# Entries with api_base call an OpenAI-compatible endpoint; {ENV_VAR} placeholders come from .env.
 llm:
   timeout_seconds: 60
   scoring:
-    model: groq/openai/gpt-oss-20b
     max_tokens: 1400
     reasoning_effort: low
-    pause_seconds: 30 # Groq free tier: 8K tokens per minute for this model
+    pause_seconds: 30 # Groq free tier: 8K tokens per minute per model
+    models:
+      - groq/openai/gpt-oss-20b
+      - groq/qwen/qwen3.8-27b
+      - model: openai/@cf/openai/gpt-oss-20b
+        api_base: https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1
+        api_key_env: CLOUDFLARE_API_KEY
   documents:
-    model: groq/openai/gpt-oss-120b
     max_tokens: 3000
     reasoning_effort: low
+    models:
+      - groq/openai/gpt-oss-120b
+      - groq/qwen/qwen3.8-27b
+      - model: openai/@cf/openai/gpt-oss-120b
+        api_base: https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1
+        api_key_env: CLOUDFLARE_API_KEY

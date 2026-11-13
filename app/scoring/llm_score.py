@@ -235,7 +235,7 @@ def save_judgment(session: Session, job_id: str, total: int, details: dict) -> N
         score = Score(job_id=job_id, breakdown={})
         session.add(score)
     score.final_score = total
-    score.model = f"stage2:{load_settings()['scoring']['model']}"
+    score.model = "stage2"
     score.breakdown = {**(score.breakdown or {}), "stage2": details}
     score.scored_at = datetime.now(UTC).replace(tzinfo=None)
 
