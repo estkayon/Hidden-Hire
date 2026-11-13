@@ -212,8 +212,12 @@ export function fetchCvStatus(jobId: string): Promise<CvStatus> {
   return getJson(`/api/jobs/${encodeURIComponent(jobId)}/cv`)
 }
 
-export function generateCv(jobId: string): Promise<CvStatus> {
-  return sendJson(`/api/jobs/${encodeURIComponent(jobId)}/cv`, 'POST')
+export function generateCv(jobId: string, projects: number): Promise<CvStatus> {
+  return sendJson(`/api/jobs/${encodeURIComponent(jobId)}/cv?projects=${projects}`, 'POST')
+}
+
+export function deleteTailoredCv(jobId: string): Promise<CvStatus> {
+  return sendJson(`/api/jobs/${encodeURIComponent(jobId)}/cv`, 'DELETE')
 }
 
 export function cvDownloadUrl(jobId: string, kind: 'pdf' | 'tex', inline = false): string {

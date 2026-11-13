@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -44,7 +44,11 @@ def get_cv_status(job_id: str, session: SessionDep) -> CvStatus:
 
 
 @router.post("/{job_id}/cv", response_model=CvStatus)
-def create_cv(job_id: str, session: SessionDep) -> CvStatus:
+def create_cv(
+    job_id: str,
+    session: SessionDep,
+    projects: int | None = Query(default=None, ge=0, le=20),
+) -> CvStatus:
     """Tailor the master CV to this job. Takes around half a minute."""
     from app.documents.cv import DocumentError
     from app.documents.tailor import cv_status, generate_cv
@@ -52,7 +56,7 @@ def create_cv(job_id: str, session: SessionDep) -> CvStatus:
 
     job = _job_or_404(job_id, session)
     try:
-        generate_cv(job)
+        generate_cv(job, projects)
     except LLMError as exc:
         raise HTTPException(
             status_code=503,
@@ -86,3 +90,12 @@ def download_cv(
         filename=f"{stem}.{kind}",
         content_disposition_type="inline" if inline else "attachment",
     )
+
+
+@router.delete("/{job_id}/cv", response_model=CvStatus)
+def remove_cv(job_id: str, session: SessionDep) -> CvStatus:
+    from app.documents.tailor import cv_status, delete_cv
+
+    job = _job_or_404(job_id, session)
+    delete_cv(job.id)
+    return CvStatus(**cv_status(job.id))

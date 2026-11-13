@@ -228,6 +228,18 @@ def judge(job: Job, profile: Profile, cv: str) -> tuple[int, dict]:
     return total, details
 
 
+def reset_recruiter_views(session: Session) -> int:
+    """Remove every saved recruiter view (the CV they were based on changed). The caller commits."""
+    rows = session.scalars(select(Score).where(Score.model.like("stage2%"))).all()
+    for score in rows:
+        score.model = STAGE1_MODEL
+        score.final_score = score.stage1_score
+        score.breakdown = {
+            k: v for k, v in (score.breakdown or {}).items() if k != "stage2"
+        }
+    return len(rows)
+
+
 def save_judgment(session: Session, job_id: str, total: int, details: dict) -> None:
     """Store a Stage 2 result as the job's final score. The caller commits."""
     score = session.get(Score, job_id)

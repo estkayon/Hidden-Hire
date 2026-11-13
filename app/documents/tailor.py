@@ -115,19 +115,26 @@ def _master_for_llm(cv: CvData) -> str:
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
 
-def build_messages(job: Job, cv: CvData) -> list[dict]:
+def build_messages(
+    job: Job, cv: CvData, optional_count: int = OPTIONAL_PROJECTS
+) -> list[dict]:
     system = PROMPT.read_text(encoding="utf-8").replace(
-        "{optional_count}", str(OPTIONAL_PROJECTS)
+        "{optional_count}", str(optional_count)
     )
+
     posting = f"Title: {job.title}\nCompany: {job.company}\n\n{job.description[:MAX_JOB_CHARS]}"
     posting = posting.replace("</job_posting>", "").replace("<job_posting>", "")
     user = f"Master CV (YAML):\n{_master_for_llm(cv)}\n<job_posting>\n{posting}\n</job_posting>"
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
-def request_plan(job: Job, cv: CvData) -> TailorPlan:
+def request_plan(
+    job: Job, cv: CvData, optional_count: int = OPTIONAL_PROJECTS
+) -> TailorPlan:
     """Raises LLMError when the call fails and ValueError for an unusable reply."""
-    raw = complete("documents", build_messages(job, cv), json_output=True)
+    raw = complete(
+        "documents", build_messages(job, cv, optional_count), json_output=True
+    )
     try:
         return TailorPlan.model_validate_json(raw)
     except ValidationError as exc:
@@ -191,7 +198,9 @@ def _skills(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
     return ordered + [g for g in master.skills if g.name not in seen_groups]
 
 
-def _projects(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
+def _projects(
+    master: CvData, plan: TailorPlan, flags: list[str], optional_count: int
+) -> list:
     """Pinned projects first, then optional projects for this kind of role, each fact-checked."""
     pinned = [p for p in master.projects if p.pinned]
     optional = {p.name: p for p in master.projects if not p.pinned}
@@ -206,22 +215,22 @@ def _projects(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
             planned[project.name] = item
 
     role_type = plan.role_type.strip().lower()
-    chosen = [p for p in optional.values() if role_type in p.tracks][:OPTIONAL_PROJECTS]
+    chosen = [p for p in optional.values() if role_type in p.tracks][:optional_count]
     for name in plan.optional_projects or [item.name for item in plan.projects]:
         project = _match(name, optional)
         if (
             project is not None
             and project not in chosen
-            and len(chosen) < OPTIONAL_PROJECTS
+            and len(chosen) < optional_count
         ):
             chosen.append(project)
-    if len(chosen) < OPTIONAL_PROJECTS:
+    if len(chosen) < optional_count:
         given = ", ".join(plan.optional_projects) or "none"
         flags.append(
             f"projects: the model chose too few optional projects (gave: {given}); filled from the master order"
         )
         chosen += [p for p in optional.values() if p not in chosen][
-            : OPTIONAL_PROJECTS - len(chosen)
+            : optional_count - len(chosen)
         ]
 
     result = []
@@ -240,7 +249,9 @@ def _projects(master: CvData, plan: TailorPlan, flags: list[str]) -> list:
     return result
 
 
-def apply_plan(master: CvData, plan: TailorPlan) -> TailorResult:
+def apply_plan(
+    master: CvData, plan: TailorPlan, optional_count: int = OPTIONAL_PROJECTS
+) -> TailorResult:
     """Build the tailored CV from the master, keeping only changes the master supports."""
     flags: list[str] = []
     source = master_text(master)
@@ -270,7 +281,7 @@ def apply_plan(master: CvData, plan: TailorPlan) -> TailorResult:
             "summary": summary,
             "skills": _skills(master, plan, flags),
             "experience": experience,
-            "projects": _projects(master, plan, flags),
+            "projects": _projects(master, plan, flags, optional_count),
         }
     )
     lower_source = source.lower()
@@ -308,10 +319,27 @@ def cv_status(job_id: str) -> dict:
     }
 
 
-def generate_cv(job: Job) -> tuple[Path, list[str]]:
+def optional_count_for(master: CvData, total_projects: int | None) -> int:
+    """How many optional projects to add so the CV shows total_projects (pinned ones always stay)."""
+    pinned = sum(p.pinned for p in master.projects)
+    available = len(master.projects) - pinned
+    if total_projects is None:
+        return min(OPTIONAL_PROJECTS, available)
+    return max(0, min(total_projects - pinned, available))
+
+
+def delete_cv(job_id: str) -> None:
+    for path in cv_files(job_id).values():
+        path.unlink(missing_ok=True)
+
+
+def generate_cv(job: Job, total_projects: int | None = None) -> tuple[Path, list[str]]:
     """Tailored CV PDF for one job. Raises LLMError, ValueError or DocumentError."""
     master = load_master()
-    result = apply_plan(master, request_plan(job, master))
+    optional_count = optional_count_for(master, total_projects)
+    result = apply_plan(
+        master, request_plan(job, master, optional_count), optional_count
+    )
     pdf = compile_pdf(render_tex(result.cv), name=f"cv_{job.id}")
     meta = {
         "generated_at": datetime.now(UTC).isoformat(),
@@ -327,6 +355,9 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Generate a tailored CV for one job.")
     parser.add_argument("job_id")
+    parser.add_argument(
+        "--projects", type=int, help="total projects in the CV, pinned ones included"
+    )
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
@@ -339,7 +370,7 @@ def main() -> None:
         if job is None:
             raise SystemExit("Job not found")
         try:
-            pdf, flags = generate_cv(job)
+            pdf, flags = generate_cv(job, args.projects)
         except (LLMError, ValueError, DocumentError) as exc:
             raise SystemExit(f"CV generation failed: {exc}") from exc
     print(f"Wrote {pdf}")

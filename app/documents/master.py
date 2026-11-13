@@ -235,7 +235,9 @@ def master_counts() -> dict[str, int] | None:
         return None
     if master is None:
         return None
-    return {
+    counts = {
         section: len(getattr(master, section))
         for section in ("experience", "projects", "certifications", "skills")
     }
+    counts["pinned"] = sum(p.pinned for p in master.projects)
+    return counts

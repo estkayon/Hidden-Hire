@@ -190,3 +190,14 @@ def test_skills_reordered_without_new_items():
     assert result.cv.skills[0].items == ["Git", "Docker"]
     assert any("Terraform" in flag for flag in result.flags)
     assert not any("Python" in flag for flag in result.flags)
+
+
+def test_optional_count_follows_requested_total():
+    from app.documents.tailor import optional_count_for
+
+    assert optional_count_for(MASTER, None) == 2
+    assert optional_count_for(MASTER, 5) == 3
+    assert optional_count_for(MASTER, 1) == 0
+    assert optional_count_for(MASTER, 20) == 3
+    result = apply_plan(MASTER, TailorPlan(), optional_count=3)
+    assert len(result.cv.projects) == 5

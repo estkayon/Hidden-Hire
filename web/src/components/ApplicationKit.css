@@ -49,6 +49,50 @@
   cursor: progress;
 }
 
+.kit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 6px;
+}
+
+.kit-delete {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #b23b35;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.kit-delete:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.kit-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kit-select select {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--glass-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
 .kit-link {
   font-size: 0.88rem;
   font-weight: 600;

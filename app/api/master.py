@@ -3,6 +3,7 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.jobs import SessionDep
 from app.documents.cv import CvData
 from app.profile import cv_text
 
@@ -29,6 +30,14 @@ class MergeRequest(BaseModel):
 
 class MergeResult(BaseModel):
     report: list[str]
+
+
+def _reset_reviews(session) -> None:
+    """Saved recruiter views were built from the old CV, so they are removed."""
+    from app.scoring.llm_score import reset_recruiter_views
+
+    reset_recruiter_views(session)
+    session.commit()
 
 
 def _rescore() -> None:
@@ -80,7 +89,9 @@ def draft_from_uploaded_cv() -> Draft:
 
 
 @router.post("/merge", response_model=MergeResult)
-def merge_draft(body: MergeRequest, background: BackgroundTasks) -> MergeResult:
+def merge_draft(
+    body: MergeRequest, background: BackgroundTasks, session: SessionDep
+) -> MergeResult:
     from app.documents.cv import DocumentError
     from app.documents.master import (
         load_master_or_none,
@@ -95,6 +106,7 @@ def merge_draft(body: MergeRequest, background: BackgroundTasks) -> MergeResult:
     except (ValueError, DocumentError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     save_master(cv)
+    _reset_reviews(session)
     background.add_task(_rescore)
     return MergeResult(report=report)
 
@@ -114,7 +126,9 @@ def get_master_cv() -> CvData:
 
 
 @router.put("/cv", response_model=CvData)
-def save_master_cv(cv: CvData, background: BackgroundTasks) -> CvData:
+def save_master_cv(
+    cv: CvData, background: BackgroundTasks, session: SessionDep
+) -> CvData:
     """Save the CV from the editor. Rendering first rejects unsafe links."""
     from app.documents.cv import DocumentError, render_tex
     from app.documents.master import save_master
@@ -124,5 +138,6 @@ def save_master_cv(cv: CvData, background: BackgroundTasks) -> CvData:
     except DocumentError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     save_master(cv)
+    _reset_reviews(session)
     background.add_task(_rescore)
     return cv

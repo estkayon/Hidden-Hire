@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
-import { cvDownloadUrl, fetchCvStatus, generateCv, type CvStatus } from '../api'
+import { cvDownloadUrl, deleteTailoredCv, fetchCvStatus, fetchMaster, generateCv, type CvStatus } from '../api'
 import { timeAgo } from '../format'
 import { Modal } from './Modal'
 import './ApplicationKit.css'
 
+type ProjectRange = { min: number; max: number }
+
 export function ApplicationKit({ jobId }: { jobId: string }) {
   const [status, setStatus] = useState<CvStatus | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [range, setRange] = useState<ProjectRange | null>(null)
+  const [projects, setProjects] = useState(5)
+  const [busy, setBusy] = useState<'generate' | 'delete' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
 
@@ -19,17 +23,44 @@ export function ApplicationKit({ jobId }: { jobId: string }) {
       .catch((err: Error) => setError(err.message))
   }, [jobId])
 
+  useEffect(() => {
+    fetchMaster()
+      .then(({ exists, counts }) => {
+        if (!exists) return
+        const min = counts.pinned ?? 0
+        const max = counts.projects ?? 0
+        setRange({ min, max })
+        setProjects(Math.min(max, min + 2))
+      })
+      .catch(() => setRange(null))
+  }, [])
+
   async function generate() {
-    setBusy(true)
+    setBusy('generate')
     setError(null)
     try {
-      setStatus(await generateCv(jobId))
+      setStatus(await generateCv(jobId, projects))
     } catch (err) {
       setError((err as Error).message)
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
+
+  async function remove() {
+    if (!window.confirm('Delete the tailored CV for this job? You can generate a new one after.')) return
+    setBusy('delete')
+    setError(null)
+    try {
+      setStatus(await deleteTailoredCv(jobId))
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const options = range ? Array.from({ length: range.max - range.min + 1 }, (_, i) => range.min + i) : []
 
   return (
     <div className="side-card kit-card">
@@ -59,9 +90,14 @@ export function ApplicationKit({ jobId }: { jobId: string }) {
             <a className="kit-ghost" href={cvDownloadUrl(jobId, 'pdf')} download>
               Download PDF
             </a>
-            <a className="kit-link" href={cvDownloadUrl(jobId, 'tex')} download>
-              LaTeX source
-            </a>
+            <div className="kit-row">
+              <a className="kit-link" href={cvDownloadUrl(jobId, 'tex')} download>
+                LaTeX source
+              </a>
+              <button type="button" className="kit-delete" disabled={busy !== null} onClick={remove}>
+                {busy === 'delete' ? 'Deleting…' : 'Delete CV'}
+              </button>
+            </div>
           </div>
           {status.flags.length > 0 && (
             <details className="kit-flags">
@@ -79,10 +115,23 @@ export function ApplicationKit({ jobId }: { jobId: string }) {
       ) : (
         <>
           <p className="kit-text">A CV tailored to this job, using only facts from your master CV.</p>
-          <button type="button" className="kit-btn" disabled={busy || status === null} onClick={generate}>
-            {busy ? 'Writing your CV…' : 'Generate CV'}
+          {options.length > 1 && (
+            <label className="kit-select">
+              Projects in CV
+              <select value={projects} disabled={busy !== null} onChange={(e) => setProjects(Number(e.target.value))}>
+                {options.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                    {n === range?.min ? ' (pinned only)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button type="button" className="kit-btn" disabled={busy !== null || status === null} onClick={generate}>
+            {busy === 'generate' ? 'Writing your CV…' : 'Generate CV'}
           </button>
-          {busy && <p className="kit-hint">This takes about half a minute.</p>}
+          {busy === 'generate' && <p className="kit-hint">This takes about half a minute.</p>}
         </>
       )}
 
