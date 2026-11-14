@@ -40,3 +40,8 @@ info.txt
 tools/
 
 cred.txt
+
+
+# Personal data (Section 10): any CV folder and any database file
+cv/
+*.db
