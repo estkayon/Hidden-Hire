@@ -144,7 +144,7 @@ export function ProfilePage({ onStateChange }: { onStateChange: (state: ProfileS
   }
 
   function remove() {
-    if (window.confirm('Delete your CV and profile from this computer?')) {
+    if (window.confirm('Delete your uploaded CV and profile from this computer? Your master CV is kept.')) {
       run(deleteCv, 'Your CV and profile were deleted.')
     }
   }
@@ -217,6 +217,27 @@ export function ProfilePage({ onStateChange }: { onStateChange: (state: ProfileS
                   </label>
                 ))}
               </div>
+
+              <h3 className="card-subheading">Preferences</h3>
+              <label className="field-label">
+                Target roles
+                <ChipInput
+                  values={draft.target_roles}
+                  onChange={(target_roles) => setDraft({ ...draft, target_roles })}
+                  placeholder="e.g. MLOps Engineer"
+                />
+              </label>
+              <label className="field-label">
+                Years of experience
+                <input
+                  type="number"
+                  min={0}
+                  max={60}
+                  step={0.5}
+                  value={draft.years_experience}
+                  onChange={(e) => setDraft({ ...draft, years_experience: e.target.value })}
+                />
+              </label>
             </section>
 
             <div className="profile-stack">
@@ -245,29 +266,6 @@ export function ProfilePage({ onStateChange }: { onStateChange: (state: ProfileS
                     </div>
                   </div>
                 )}
-              </section>
-
-              <section className="profile-card">
-                <h2 className="card-heading-title">Preferences</h2>
-                <label className="field-label">
-                  Target roles
-                  <ChipInput
-                    values={draft.target_roles}
-                    onChange={(target_roles) => setDraft({ ...draft, target_roles })}
-                    placeholder="e.g. MLOps Engineer"
-                  />
-                </label>
-                <label className="field-label">
-                  Years of experience
-                  <input
-                    type="number"
-                    min={0}
-                    max={60}
-                    step={0.5}
-                    value={draft.years_experience}
-                    onChange={(e) => setDraft({ ...draft, years_experience: e.target.value })}
-                  />
-                </label>
               </section>
             </div>
           </div>

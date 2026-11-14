@@ -41,7 +41,7 @@ You stay in control: Hidden Hire finds, scores and prepares. **You always apply 
 
 <img src="assets/readme/pipeline.svg" width="100%" alt="GitHub Actions fetches jobs every 3 hours into a public data repo. Your PC syncs, scores and builds CVs locally. A local fetch is the backup.">
 
-1. **GitHub Actions** runs the fetcher every 3 hours in the cloud, even when your PC is off. It collects jobs, keeps only fresh tech roles at intern to mid level, and removes duplicates.
+1. **GitHub Actions** runs the fetcher in the cloud every hour (GitHub often delays or skips scheduled runs, so in practice every few hours), even when your PC is off. It collects jobs, keeps only fresh tech roles at intern to mid level, and removes duplicates.
 2. The results go to a **public data repo** ([`estkayon/hidden-hire-data`](https://github.com/estkayon/hidden-hire-data)) as daily JSONL files. It holds public job posts only, no personal data.
 3. On **your PC**, `sync` pulls new jobs into a local SQLite database and scores them. The dashboard, your CV, scores and applications all stay on your machine.
 4. **Backup:** if the cloud fetch is not running, you can fetch on your own PC with one command.
@@ -127,59 +127,68 @@ tools\tectonic.exe
 
 The `tools/` folder is git-ignored.
 
-### 6. Dashboard
+### 6. Build the dashboard (once)
 
 ```powershell
 cd web
 npm install
+npm run build
 cd ..
 ```
+
+The backend serves this build, so you do not need a separate dashboard server. Run `npm run build` again after you pull new code.
 
 <img src="assets/readme/divider.svg" width="100%" alt="">
 
 ## Daily use
 
-Open three terminals in the project folder (with your Python environment active in the first two):
-
-```powershell
-python -m app.sync
-```
+With your Python environment active, run one command in the project folder:
 
 ```powershell
 python -m app.main
 ```
 
+Then open **http://127.0.0.1:8000** in your browser.
+
+- When the app starts, it syncs in the background: it pulls new jobs from the data repo, removes jobs older than 10 days and updates match scores. You can use the dashboard while it runs.
+- While the app is open, it syncs again every 3 hours.
+- The pill next to **Clear filters** shows when jobs were last fetched. Click **Refresh** to sync right away.
+- Press `Ctrl+C` in the terminal to stop the app.
+
+### One-click start (optional, Windows)
+
+If you prefer not to open a terminal, double-click **`start.bat`** in the project folder. It activates the Python environment (a `.venv` folder or the `hidden-hire` conda environment), builds the dashboard if needed, starts the app and opens your browser. If the app is already running, it only opens the browser. Close its window to stop the app.
+
+To get a desktop shortcut with the Hidden Hire icon, run this once:
+
 ```powershell
-cd web
-npm run dev
+powershell -ExecutionPolicy Bypass -File create-shortcut.ps1
 ```
 
-Then open **http://127.0.0.1:5173** in your browser.
+The shortcut starts the app with its window minimized. If `assets\hidden-hire.ico` is missing, Windows shows its default icon.
 
-- `app.sync` pulls new jobs, removes old ones and runs Stage 1 scoring. Run it whenever you want fresh jobs.
-- `app.main` starts the local API on 127.0.0.1.
-- `npm run dev` starts the dashboard.
+The manual commands above keep working, so use whichever you like.
 
 ### First time in the dashboard
 
-1. Open **Profile** and upload your CV as a text PDF (not a scanned image). Check the detected name, links and skills.
-2. Build your **master CV**: Hidden Hire turns your uploaded CV and any extra notes into structured entries you can edit in a form. Tailored CVs use only what is in your master CV.
+1. Open **Profile** and upload your CV as a text PDF (not a scanned image). Check the detected name, links, skills and preferences.
+2. Build your **master CV** under **Add to my CV**: import your uploaded CV, or write or load notes (PDF, Word `.docx`, `.txt` or `.md`). Each draft opens as a form you check before it is saved. Tailored CVs use only what is in your master CV. You can edit it any time in the **CV editor**, or remove it with **Delete master CV**.
 3. Go back to the job list. Every job now has a match score and an eligibility label.
 4. Open a job you like, click **Get recruiter view**, and if it fits, **Generate CV**.
 5. Click **Mark as applied** after you apply on the official link.
 
 Found a job on LinkedIn, Facebook or in an email? Use **Paste job** to add it like any other job.
 
-### Backup: fetch on your own PC
+### When the cloud fetch is late
 
-If the cloud fetch has stopped (no new jobs for a day), fetch locally and sync:
+GitHub sometimes delays or skips scheduled runs. If the newest fetch is more than 6 hours old, the app fetches jobs on your own PC before importing (this takes a few minutes). You can also run it by hand:
 
 ```powershell
 python -m fetcher.run
 python -m app.sync
 ```
 
-This takes a few minutes and writes to `data/jobs`. `sync` reads both the data repo and this folder, so nothing is imported twice.
+Local fetches are written to `data/jobs`. `sync` reads both the data repo and this folder, so nothing is imported twice. If you do not set `DATA_REPO_URL`, the app uses local fetches only.
 
 <img src="assets/readme/divider.svg" width="100%" alt="">
 
@@ -295,7 +304,7 @@ No. Hidden Hire never submits applications or sends emails. It gives you the off
 <details>
 <summary><b>The dashboard shows no new jobs.</b></summary>
 
-Run `python -m app.sync` and check the **Sources** page for the last fetch time and errors per source. If the last run is old, use the local backup fetch.
+Click **Refresh** next to **Clear filters**, then check the **Sources** page for the last fetch time and errors per source. If the cloud fetch is more than 6 hours old, the app fetches on your PC automatically.
 </details>
 
 <details>

@@ -1,6 +1,6 @@
 """Master CV builder: draft entries from notes or the uploaded CV, merge them, and edit the whole CV."""
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.api.jobs import SessionDep
@@ -30,6 +30,10 @@ class MergeRequest(BaseModel):
 
 class MergeResult(BaseModel):
     report: list[str]
+
+
+class ExtractedText(BaseModel):
+    text: str
 
 
 def _reset_reviews(session) -> None:
@@ -78,6 +82,23 @@ def get_master() -> MasterSummary:
 @router.post("/draft", response_model=Draft)
 def draft_from_notes(body: DraftRequest) -> Draft:
     return _draft(body.text)
+
+
+@router.post("/extract-text", response_model=ExtractedText)
+async def extract_uploaded_text(file: UploadFile) -> ExtractedText:
+    """Text from a PDF, Word, .txt or .md file, for the notes box. Nothing is saved."""
+    from app.documents.upload_text import MAX_FILE_BYTES, MAX_TEXT_CHARS, extract_text
+
+    data = await file.read(MAX_FILE_BYTES + 1)
+    if len(data) > MAX_FILE_BYTES:
+        raise HTTPException(
+            status_code=413, detail="The file is too large. Keep it under 5 MB."
+        )
+    try:
+        text = extract_text(file.filename or "", data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return ExtractedText(text=text[:MAX_TEXT_CHARS])
 
 
 @router.post("/draft-from-cv", response_model=Draft)
@@ -141,3 +162,14 @@ def save_master_cv(
     _reset_reviews(session)
     background.add_task(_rescore)
     return cv
+
+
+@router.delete("/cv", status_code=204)
+def delete_master_cv(background: BackgroundTasks, session: SessionDep) -> None:
+    """Delete the master CV and its backup. Tailored CVs in output/ are kept."""
+    from app.documents.master import delete_master
+
+    if not delete_master():
+        raise HTTPException(status_code=404, detail="No master CV yet.")
+    _reset_reviews(session)
+    background.add_task(_rescore)

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  deleteMasterCv,
   draftFromNotes,
+  extractFileText,
   draftFromUploadedCv,
   fetchMaster,
   mergeDraft,
@@ -22,7 +24,8 @@ import {
 import './MasterBuilder.css'
 
 const MAX_CHARS = 12_000
-const MAX_FILE_BYTES = 100_000
+const MAX_FILE_BYTES = 5 * 1024 * 1024
+const FILE_TYPES = /\.(pdf|docx|txt|md)$/i
 
 const PLACEHOLDER = `Project name | Tech stack
 
@@ -46,7 +49,7 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
   const [text, setText] = useState('')
   const [review, setReview] = useState<Review | null>(null)
   const [report, setReport] = useState<string[]>([])
-  const [busy, setBusy] = useState<'draft' | 'import' | 'merge' | null>(null)
+  const [busy, setBusy] = useState<'draft' | 'import' | 'merge' | 'delete' | 'load' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -56,7 +59,10 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
       .catch(() => setMaster(null))
   }, [])
 
-  async function run<T>(kind: 'draft' | 'import' | 'merge', action: () => Promise<T>): Promise<T | null> {
+  async function run<T>(
+    kind: 'draft' | 'import' | 'merge' | 'delete' | 'load',
+    action: () => Promise<T>,
+  ): Promise<T | null> {
     setBusy(kind)
     setError(null)
     try {
@@ -70,16 +76,16 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
   }
 
   async function onFile(file: File) {
-    if (!/\.(txt|md)$/i.test(file.name)) {
-      setError('Please choose a .txt or .md file.')
+    if (!FILE_TYPES.test(file.name)) {
+      setError('Please choose a PDF, Word (.docx), .txt or .md file.')
       return
     }
     if (file.size > MAX_FILE_BYTES) {
-      setError('The file is too large. Keep it under 100 KB.')
+      setError('The file is too large. Keep it under 5 MB.')
       return
     }
-    setText((await file.text()).slice(0, MAX_CHARS))
-    setError(null)
+    const loaded = await run('load', () => extractFileText(file))
+    if (loaded !== null) setText(loaded.slice(0, MAX_CHARS))
   }
 
   function startReview({ draft, flags }: MasterDraft) {
@@ -112,6 +118,18 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
     fetchMaster().then(setMaster).catch(() => undefined)
   }
 
+  async function removeMaster() {
+    if (!window.confirm('Delete your master CV from this computer? Your uploaded CV and tailored CVs are kept.')) {
+      return
+    }
+    setReport([])
+    await run('delete', async () => {
+      await deleteMasterCv()
+      return true
+    })
+    fetchMaster().then(setMaster).catch(() => undefined)
+  }
+
   const setDraft: SetCv = (key, value) => setReview((r) => (r ? { ...r, cv: { ...r.cv, [key]: value } } : r))
   const errors = review ? validate(review.cv, review.withHeader) : []
 
@@ -124,9 +142,16 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
       {master && (
         <div className="mb-summary">
           <span>{summaryText(master)}</span>
-          <button type="button" className="mb-edit" onClick={() => (window.location.hash = '/cv')}>
-            Open CV editor
-          </button>
+          <div className="mb-summary-actions">
+            {master.exists && (
+              <button type="button" className="btn-danger" disabled={busy !== null} onClick={removeMaster}>
+                {busy === 'delete' ? 'Deleting…' : 'Delete master CV'}
+              </button>
+            )}
+            <button type="button" className="mb-edit" onClick={() => (window.location.hash = '/cv')}>
+              Open CV editor
+            </button>
+          </div>
         </div>
       )}
 
@@ -146,7 +171,7 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
             <input
               ref={fileInput}
               type="file"
-              accept=".txt,.md,text/plain,text/markdown"
+              accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
               hidden
               onChange={(e) => {
                 const file = e.target.files?.[0]
@@ -154,8 +179,13 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
                 e.target.value = ''
               }}
             />
-            <button type="button" className="btn-secondary" onClick={() => fileInput.current?.click()}>
-              Load .txt or .md
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy !== null}
+              onClick={() => fileInput.current?.click()}
+            >
+              {busy === 'load' ? 'Reading file…' : 'Load PDF, Word or text file'}
             </button>
           </div>
           <div className="mb-actions">
@@ -213,7 +243,7 @@ export function MasterBuilder({ hasCv }: { hasCv: boolean }) {
         </>
       )}
 
-      {busy && busy !== 'merge' && <p className="mb-hint">This takes up to half a minute.</p>}
+      {busy && !['merge', 'load', 'delete'].includes(busy) && <p className="mb-hint">This takes up to half a minute.</p>}
       {error && <p className="mb-error">{error}</p>}
       {report.length > 0 && (
         <div className="mb-report">

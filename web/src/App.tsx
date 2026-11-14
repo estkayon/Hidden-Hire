@@ -22,6 +22,7 @@ import { Pagination } from './components/Pagination'
 import { PasteJobModal } from './components/PasteJobModal'
 import { CvEditorPage } from './components/CvEditorPage'
 import { ProfilePage } from './components/ProfilePage'
+import { SyncButton } from './components/SyncButton'
 import { useDebouncedValue } from './hooks'
 import './App.css'
 
@@ -138,6 +139,7 @@ export default function App() {
   const openJob = (jobId: string) => navigate(`/job/${encodeURIComponent(jobId)}`)
   const backToList = () => navigate('')
   const closePaste = useCallback(() => setPasteOpen(false), [])
+  const onSynced = useCallback(() => setReloadKey((k) => k + 1), [])
 
   return (
     <>
@@ -227,14 +229,17 @@ export default function App() {
               All jobs
             </button>
           )}
-          <button
-            type="button"
-            className="clear-btn"
-            onClick={() => updateFilters(EMPTY_FILTERS)}
-            disabled={!Object.values(filters).some(Boolean)}
-          >
-            Clear filters
-          </button>
+          <div className="list-actions">
+            <SyncButton onSynced={onSynced} />
+            <button
+              type="button"
+              className="clear-btn"
+              onClick={() => updateFilters(EMPTY_FILTERS)}
+              disabled={!Object.values(filters).some(Boolean)}
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
       )}
 

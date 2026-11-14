@@ -1,14 +1,17 @@
 """Pull the data repo, import new jobs into the local database, then score them.
 
-Jobs come from the data repo (filled by GitHub Actions every 3 hours) and from data/jobs,
-where a local `python -m fetcher.run` writes when Actions is not available.
+Jobs come from the data repo (filled by GitHub Actions) and from data/jobs, where a local
+fetch writes. When the newest fetch in either place is older than STALE_HOURS, a local
+fetch runs first, so jobs stay fresh even when GitHub skips scheduled runs.
 """
 
 import json
 import logging
 import os
 import subprocess
+import sys
 from collections.abc import Iterator
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from itertools import chain
 from pathlib import Path
@@ -25,11 +28,23 @@ from fetcher.filters import RETENTION_DAYS, is_fresh
 from fetcher.models import Job as JobRecord
 from fetcher.normalize import normalize_job
 
-REPO_DIR = Path(__file__).resolve().parent.parent / "data" / "repo"
+ROOT = Path(__file__).resolve().parent.parent
+REPO_DIR = ROOT / "data" / "repo"
 LOCAL_DIR = REPO_DIR.parent
 GIT_TIMEOUT = 120
+FETCH_TIMEOUT = 900
+STALE_HOURS = 6
 
 log = logging.getLogger("sync")
+
+
+@dataclass
+class SyncResult:
+    added: int
+    removed: int
+    runs: int
+    fetched_locally: bool
+    last_fetch_at: datetime | None
 
 
 def naive_utc(value: datetime | None) -> datetime | None:
@@ -44,6 +59,37 @@ def pull_data_repo(repo_url: str, repo_dir: Path = REPO_DIR) -> None:
         repo_dir.parent.mkdir(parents=True, exist_ok=True)
         cmd = ["git", "clone", "--quiet", repo_url, str(repo_dir)]
     subprocess.run(cmd, check=True, timeout=GIT_TIMEOUT)
+
+
+def read_run_at(directory: Path) -> datetime | None:
+    """Time of the fetch run recorded in directory/health/latest.json."""
+    try:
+        report = json.loads(
+            (directory / "health" / "latest.json").read_text(encoding="utf-8")
+        )
+        run_at = datetime.fromisoformat(report["run_at"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return run_at if run_at.tzinfo else run_at.replace(tzinfo=UTC)
+
+
+def latest_fetch_at(directories: list[Path]) -> datetime | None:
+    return max((t for t in map(read_run_at, directories) if t), default=None)
+
+
+def is_stale(last_fetch: datetime | None, now: datetime) -> bool:
+    return last_fetch is None or now - last_fetch > timedelta(hours=STALE_HOURS)
+
+
+def fetch_locally() -> bool:
+    """Run the fetcher on this PC, writing to data/jobs. Takes a few minutes."""
+    cmd = [sys.executable, "-m", "fetcher.run", "--out", str(LOCAL_DIR)]
+    try:
+        subprocess.run(cmd, check=True, timeout=FETCH_TIMEOUT, cwd=ROOT)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        log.error("local fetch failed (%s)", type(exc).__name__)
+        return False
+    return True
 
 
 def read_records(repo_dir: Path) -> Iterator[JobRecord]:
@@ -114,7 +160,7 @@ def import_health(session: Session, repo_dir: Path) -> int:
         run_at = naive_utc(datetime.fromisoformat(report["run_at"]))
         sources = report["sources"]
     except (OSError, ValueError, KeyError, TypeError):
-        log.warning("health report missing or invalid")
+        log.warning("health report missing or invalid in %s", repo_dir.name)
         return 0
     if session.scalar(select(SourceRun.id).where(SourceRun.run_at == run_at).limit(1)):
         return 0
@@ -145,38 +191,56 @@ def score_jobs() -> None:
         log.info("scored %d jobs", scored)
 
 
-def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
-    )
-    load_dotenv()
+def sync_once(now: datetime | None = None) -> SyncResult:
+    """Pull, fetch locally if the data is stale, import, clean up and score."""
+    now = now or datetime.now(UTC)
     repo_url = os.environ.get("DATA_REPO_URL")
-    if not repo_url:
-        raise SystemExit("Set DATA_REPO_URL in .env")
+    if repo_url:
+        try:
+            pull_data_repo(repo_url)
+        except (
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+            OSError,
+        ) as exc:
+            log.error(
+                "git pull failed (%s); using what is already on disk",
+                type(exc).__name__,
+            )
+    else:
+        log.warning("DATA_REPO_URL is not set; using local fetch only")
 
-    try:
-        pull_data_repo(repo_url)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
-        log.error(
-            "git pull failed (%s); importing what is already on disk",
-            type(exc).__name__,
+    fetched = False
+    if is_stale(latest_fetch_at([REPO_DIR, LOCAL_DIR]), now):
+        log.info(
+            "newest fetch is older than %d hours; fetching on this PC", STALE_HOURS
         )
+        fetched = fetch_locally()
 
     init_db()
-    now = datetime.now(UTC)
     with SessionLocal.begin() as session:
         records = chain(read_records(REPO_DIR), read_records(LOCAL_DIR))
         added = import_jobs(session, records, now)
         removed = delete_old_jobs(session, now)
-        runs = import_health(session, REPO_DIR)
+        runs = import_health(session, REPO_DIR) + import_health(session, LOCAL_DIR)
     log.info(
         "imported %d new jobs, deleted %d old jobs, recorded %d source runs",
         added,
         removed,
         runs,
     )
-
     score_jobs()
+    return SyncResult(
+        added, removed, runs, fetched, latest_fetch_at([REPO_DIR, LOCAL_DIR])
+    )
+
+
+def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
+    )
+    load_dotenv()
+    sync_once()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,76 @@
+.sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid rgb(32 70 84 / 0.15);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.7);
+  font-size: 0.85rem;
+  color: #204654;
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3aa65a;
+}
+
+.sync.is-running .sync-dot {
+  background: #f0b429;
+  animation: sync-pulse 1.2s ease-in-out infinite;
+}
+
+.sync.is-error .sync-dot {
+  background: #e5534b;
+}
+
+.sync-label {
+  white-space: nowrap;
+}
+
+.sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #204654;
+  color: #f7f9e1;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sync-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sync.is-running .sync-icon {
+  animation: sync-spin 1s linear infinite;
+}
+
+.sync-icon {
+  display: inline-block;
+}
+
+@keyframes sync-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .sync-label {
+    display: none;
+  }
+}

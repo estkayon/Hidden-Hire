@@ -238,6 +238,22 @@
   padding: 14px 24px 0;
 }
 
+.card-subheading {
+  margin: 22px 0 12px;
+  padding-top: 18px;
+  border-top: 1px solid rgb(32 70 84 / 0.1);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #204654;
+}
+
+.list-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
 .clear-btn {
   margin-left: auto;
   height: 38px;
@@ -552,90 +568,7 @@
   color: var(--text-faint);
 }
 
-/* ---------- Footer ---------- */
-.site-footer {
-  margin-top: 40px;
-  padding: 44px 24px 28px;
-  background: linear-gradient(160deg, var(--teal), #1a3a46);
-  color: var(--mist);
-}
 
-.footer-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
-.footer-brand {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.footer-brand .logo {
-  border-radius: 14px;
-  box-shadow: 0 0 0 1px rgb(247 249 225 / 0.2);
-}
-
-.footer-name {
-  margin: 0 0 4px;
-  font-family: var(--serif);
-  font-size: 1.6rem;
-}
-
-.footer-tagline {
-  margin: 0;
-  max-width: 46ch;
-  color: rgb(247 249 225 / 0.72);
-}
-
-.to-top {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 22px;
-  border: 1px solid rgb(247 249 225 / 0.35);
-  border-radius: 999px;
-  background: rgb(247 249 225 / 0.08);
-  color: var(--mist);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 240ms var(--ease), border-color 240ms var(--ease), transform 240ms var(--ease);
-}
-
-.to-top span {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--meadow);
-  color: var(--teal);
-  transition: transform 240ms var(--ease);
-}
-
-.to-top:hover {
-  background: rgb(247 249 225 / 0.14);
-  border-color: rgb(247 249 225 / 0.6);
-}
-
-.to-top:hover span {
-  transform: translateY(-3px);
-}
-
-.footer-note {
-  max-width: 1120px;
-  margin: 32px auto 0;
-  padding-top: 18px;
-  border-top: 1px solid rgb(247 249 225 / 0.15);
-  font-size: 0.82rem;
-  color: rgb(247 249 225 / 0.55);
-}
 
 /* ---------- Shared buttons (paste form) ---------- */
 .btn-primary,

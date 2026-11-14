@@ -284,3 +284,11 @@ def master_counts() -> dict[str, int] | None:
     }
     counts["pinned"] = sum(p.pinned for p in master.projects)
     return counts
+
+
+def delete_master(path: Path = MASTER_CV) -> bool:
+    """Delete the master CV and its backup. True if a master CV existed."""
+    existed = path.exists()
+    for file in (path, path.with_name(path.name + ".bak")):
+        file.unlink(missing_ok=True)
+    return existed

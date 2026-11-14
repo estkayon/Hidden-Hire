@@ -291,6 +291,24 @@ export function saveMasterCv(cv: CvData): Promise<CvData> {
   return sendJson('/api/master/cv', 'PUT', cv)
 }
 
+export async function deleteMasterCv(): Promise<void> {
+  const response = await fetch('/api/master/cv', { method: 'DELETE' })
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Could not delete the master CV (HTTP ${response.status}).`)
+  }
+}
+
+export async function extractFileText(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('file', file)
+  const response = await fetch('/api/master/extract-text', { method: 'POST', body: form })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(typeof data.detail === 'string' ? data.detail : `Could not read the file (HTTP ${response.status}).`)
+  }
+  return data.text
+}
+
 export function fetchProfile(): Promise<ProfileState> {
   return getJson('/api/profile')
 }
@@ -346,3 +364,23 @@ export async function setSaved(jobId: string, saved: boolean): Promise<void> {
     throw new Error(`API error ${response.status}`)
   }
 }
+
+
+export type SyncStatus = {
+  running: boolean
+  started_at: string | null
+  finished_at: string | null
+  last_fetch_at: string | null
+  added: number
+  fetched_locally: boolean
+  error: string | null
+}
+
+async function syncRequest(method: 'GET' | 'POST'): Promise<SyncStatus> {
+  const response = await fetch('/api/sync', { method })
+  if (!response.ok) throw new Error(`Sync status failed (HTTP ${response.status})`)
+  return response.json()
+}
+
+export const fetchSyncStatus = () => syncRequest('GET')
+export const startSync = () => syncRequest('POST')
