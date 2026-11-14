@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-label="Features: underrated sources, match score, eligibility labels, tailored CV, tracker, private by design">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7F9E1"/>
+      <stop offset="1" stop-color="#eef3d6"/>
+    </linearGradient>
+    <clipPath id="frame"><rect width="1200" height="520" rx="24"/></clipPath>
+  </defs>
+  <style>
+    text { font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; }
+    .card { animation: rise 0.7s ease-out backwards, bob 7s ease-in-out infinite; }
+    .c1 { animation-delay: 0.05s, 0s; } .c2 { animation-delay: 0.2s, -1.2s; } .c3 { animation-delay: 0.35s, -2.4s; }
+    .c4 { animation-delay: 0.5s, -3.6s; } .c5 { animation-delay: 0.65s, -4.8s; } .c6 { animation-delay: 0.8s, -6s; }
+    .icon { animation: glow 3s ease-in-out infinite; }
+    .spin { animation: spin 8s linear infinite; transform-box: fill-box; transform-origin: center; }
+    .ring { stroke-dasharray: 69.1; stroke-dashoffset: 12; animation: ring 3s ease-in-out infinite alternate; }
+    .tick { stroke-dasharray: 30; stroke-dashoffset: 0; animation: tick 2.4s ease-in-out infinite; }
+    @keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    @keyframes glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes ring { from { stroke-dashoffset: 55; } to { stroke-dashoffset: 12; } }
+    @keyframes tick { 0% { stroke-dashoffset: 30; } 40%, 100% { stroke-dashoffset: 0; } }
+  </style>
+
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="520" fill="url(#bg)"/>
+    <text x="60" y="62" font-size="15" font-weight="700" letter-spacing="2.5" fill="#204654" fill-opacity="0.7">WHAT YOU GET</text>
+
+    <!-- Row 1 -->
+    <g class="card c1">
+      <rect x="60" y="92" width="340" height="180" rx="20" fill="#ffffff" stroke="#204654" stroke-opacity="0.12"/>
+      <g class="icon" transform="translate(108,140)">
+        <circle r="26" fill="#A9E0F1" fill-opacity="0.45"/>
+        <circle r="10" fill="none" stroke="#204654" stroke-width="3"/>
+        <path d="M7 7 L15 15" stroke="#204654" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <text x="84" y="202" font-size="21" font-weight="700" fill="#204654">Underrated sources</text>
+      <text x="84" y="228" font-size="15" fill="#204654" fill-opacity="0.75">Company ATS boards, Bangladeshi</text>
+      <text x="84" y="249" font-size="15" fill="#204654" fill-opacity="0.75">career pages and remote boards</text>
+    </g>
+
+    <g class="card c2">
+      <rect x="430" y="92" width="340" height="180" rx="20" fill="#ffffff" stroke="#204654" stroke-opacity="0.12"/>
+      <g class="icon" transform="translate(478,140)">
+        <circle r="26" fill="#CAFFA6" fill-opacity="0.7"/>
+        <circle r="11" fill="none" stroke="#204654" stroke-opacity="0.2" stroke-width="4"/>
+        <circle class="ring" r="11" fill="none" stroke="#204654" stroke-width="4" stroke-linecap="round" transform="rotate(-90)"/>
+      </g>
+      <text x="454" y="202" font-size="21" font-weight="700" fill="#204654">Match score</text>
+      <text x="454" y="228" font-size="15" fill="#204654" fill-opacity="0.75">Fast score on every job, recruiter</text>
+      <text x="454" y="249" font-size="15" fill="#204654" fill-opacity="0.75">view on the jobs you pick</text>
+    </g>
+
+    <g class="card c3">
+      <rect x="800" y="92" width="340" height="180" rx="20" fill="#ffffff" stroke="#204654" stroke-opacity="0.12"/>
+      <g class="icon" transform="translate(848,140)">
+        <circle r="26" fill="#A9E0F1" fill-opacity="0.45"/>
+        <g class="spin"><circle r="11" fill="none" stroke="#204654" stroke-width="3"/><path d="M-11 0 H11 M0 -11 C6 -5 6 5 0 11 C-6 5 -6 -5 0 -11" fill="none" stroke="#204654" stroke-width="2"/></g>
+      </g>
+      <text x="824" y="202" font-size="21" font-weight="700" fill="#204654">Eligibility labels</text>
+      <text x="824" y="228" font-size="15" fill="#204654" fill-opacity="0.75">Remote worldwide, visa support,</text>
+      <text x="824" y="249" font-size="15" fill="#204654" fill-opacity="0.75">Bangladesh or local only</text>
+    </g>
+
+    <!-- Row 2 -->
+    <g class="card c4">
+      <rect x="60" y="300" width="340" height="180" rx="20" fill="#ffffff" stroke="#204654" stroke-opacity="0.12"/>
+      <g class="icon" transform="translate(108,348)">
+        <circle r="26" fill="#CAFFA6" fill-opacity="0.7"/>
+        <rect x="-9" y="-12" width="18" height="24" rx="3" fill="none" stroke="#204654" stroke-width="2.5"/>
+        <path d="M-4 -4 H4 M-4 1 H4 M-4 6 H1" stroke="#204654" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <text x="84" y="410" font-size="21" font-weight="700" fill="#204654">Tailored CV</text>
+      <text x="84" y="436" font-size="15" fill="#204654" fill-opacity="0.75">ATS-friendly LaTeX PDF, built only</text>
+      <text x="84" y="457" font-size="15" fill="#204654" fill-opacity="0.75">from facts in your master CV</text>
+    </g>
+
+    <g class="card c5">
+      <rect x="430" y="300" width="340" height="180" rx="20" fill="#ffffff" stroke="#204654" stroke-opacity="0.12"/>
+      <g class="icon" transform="translate(478,348)">
+        <circle r="26" fill="#A9E0F1" fill-opacity="0.45"/>
+        <path class="tick" d="M-9 0 L-3 6 L9 -7" fill="none" stroke="#204654" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <text x="454" y="410" font-size="21" font-weight="700" fill="#204654">Save and track</text>
+      <text x="454" y="436" font-size="15" fill="#204654" fill-opacity="0.75">Save jobs, mark them applied</text>
+      <text x="454" y="457" font-size="15" fill="#204654" fill-opacity="0.75">and paste jobs from anywhere</text>
+    </g>
+
+    <g class="card c6">
+      <rect x="800" y="300" width="340" height="180" rx="20" fill="#204654"/>
+      <g class="icon" transform="translate(848,348)">
+        <circle r="26" fill="#CAFFA6" fill-opacity="0.2"/>
+        <rect x="-9" y="-2" width="18" height="14" rx="3" fill="none" stroke="#CAFFA6" stroke-width="2.5"/>
+        <path d="M-5 -2 V-6 A5 5 0 0 1 5 -6 V-2" fill="none" stroke="#CAFFA6" stroke-width="2.5"/>
+      </g>
+      <text x="824" y="410" font-size="21" font-weight="700" fill="#F7F9E1">Private by design</text>
+      <text x="824" y="436" font-size="15" fill="#F7F9E1" fill-opacity="0.8">Runs on 127.0.0.1. Your data stays</text>
+      <text x="824" y="457" font-size="15" fill="#F7F9E1" fill-opacity="0.8">local, except text sent to your LLM</text>
+    </g>
+  </g>
+</svg>

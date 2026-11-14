@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="180" viewBox="0 0 1200 180" role="img" aria-label="You apply yourself. Hidden Hire never submits applications or sends emails.">
+  <defs>
+    <clipPath id="frame"><rect width="1200" height="180" rx="24"/></clipPath>
+  </defs>
+  <style>
+    text { font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; }
+    .w1 { animation: wave 9s linear infinite; }
+    .w2 { animation: wave 13s linear infinite reverse; }
+    .msg { animation: rise 1s ease-out backwards; }
+    @keyframes wave { from { transform: translateX(0); } to { transform: translateX(-600px); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="180" fill="#204654"/>
+    <g class="w2"><path d="M0 120 Q150 95 300 120 T600 120 T900 120 T1200 120 T1500 120 T1800 120 V180 H0 Z" fill="#A9E0F1" fill-opacity="0.18"/></g>
+    <g class="w1"><path d="M0 135 Q150 110 300 135 T600 135 T900 135 T1200 135 T1500 135 T1800 135 V180 H0 Z" fill="#CAFFA6" fill-opacity="0.22"/></g>
+    <g class="msg">
+      <text x="600" y="62" font-size="24" font-weight="800" fill="#F7F9E1" text-anchor="middle">You apply yourself.</text>
+      <text x="600" y="92" font-size="16" fill="#F7F9E1" fill-opacity="0.75" text-anchor="middle">Hidden Hire never submits applications or sends emails for you.</text>
+    </g>
+  </g>
+</svg>

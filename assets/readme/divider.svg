@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="28" viewBox="0 0 1200 28" role="presentation">
+  <defs>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#A9E0F1" stop-opacity="0"/>
+      <stop offset="0.2" stop-color="#A9E0F1" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#CAFFA6" stop-opacity="0.9"/>
+      <stop offset="0.8" stop-color="#A9E0F1" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#A9E0F1" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="spark" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#CAFFA6"/>
+      <stop offset="1" stop-color="#CAFFA6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <style>
+    .run { animation: run 4.5s cubic-bezier(.45,0,.55,1) infinite; }
+    .run2 { animation: run 4.5s cubic-bezier(.45,0,.55,1) -2.25s infinite; opacity: 0.6; }
+    @keyframes run { from { transform: translateX(-60px); } to { transform: translateX(1260px); } }
+  </style>
+  <rect x="0" y="13" width="1200" height="2" rx="1" fill="url(#line)"/>
+  <g class="run"><circle cx="0" cy="14" r="12" fill="url(#spark)"/><circle cx="0" cy="14" r="3" fill="#F7F9E1"/></g>
+  <g class="run2"><circle cx="0" cy="14" r="8" fill="url(#spark)"/></g>
+</svg>

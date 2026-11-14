@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-label="Match score: Stage 1 on every job without an LLM, Stage 2 recruiter view on request">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f2a33"/>
+      <stop offset="1" stop-color="#204654"/>
+    </linearGradient>
+    <clipPath id="frame"><rect width="1200" height="360" rx="24"/></clipPath>
+  </defs>
+  <style>
+    text { font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; }
+    .ring { stroke-dasharray: 452.4; stroke-dashoffset: 81.4; animation: fill 2.2s 0.3s cubic-bezier(.2,.8,.2,1) backwards; }
+    .bar { transform-box: fill-box; transform-origin: left center; animation: grow 1.4s cubic-bezier(.2,.8,.2,1) backwards, breathe 4s ease-in-out infinite; }
+    .b1 { animation-delay: 0.4s, 2s; } .b2 { animation-delay: 0.55s, 2.3s; } .b3 { animation-delay: 0.7s, 2.6s; } .b4 { animation-delay: 0.85s, 2.9s; } .b5 { animation-delay: 1s, 3.2s; }
+    .stage2 { animation: rise 0.8s 0.6s ease-out backwards; }
+    .chipA { animation: hi 6s ease-in-out infinite; }
+    .chipS { animation: hi 6s ease-in-out -4s infinite; }
+    .chipK { animation: hi 6s ease-in-out -2s infinite; }
+    @keyframes fill { from { stroke-dashoffset: 452.4; } to { stroke-dashoffset: 81.4; } }
+    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes hi { 0%, 28%, 100% { opacity: 0.45; } 8%, 22% { opacity: 1; } }
+  </style>
+
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="360" fill="url(#bg)"/>
+    <text x="60" y="58" font-size="15" font-weight="700" letter-spacing="2.5" fill="#CAFFA6">MATCH SCORE</text>
+
+    <!-- Ring -->
+    <g transform="translate(180,200)">
+      <circle r="72" fill="none" stroke="#F7F9E1" stroke-opacity="0.12" stroke-width="14"/>
+      <circle class="ring" r="72" fill="none" stroke="#CAFFA6" stroke-width="14" stroke-linecap="round" transform="rotate(-90)"/>
+      <text y="10" font-size="34" font-weight="800" fill="#F7F9E1" text-anchor="middle">82%</text>
+      <text y="112" font-size="14" fill="#F7F9E1" fill-opacity="0.7" text-anchor="middle">example score</text>
+    </g>
+
+    <!-- Stage 1 -->
+    <rect x="320" y="88" width="420" height="232" rx="20" fill="#F7F9E1" fill-opacity="0.06" stroke="#A9E0F1" stroke-opacity="0.35"/>
+    <text x="346" y="124" font-size="19" font-weight="700" fill="#F7F9E1">Stage 1 · every job</text>
+    <text x="346" y="146" font-size="14" fill="#F7F9E1" fill-opacity="0.65">Local, fast, no LLM</text>
+
+    <g font-size="14" fill="#F7F9E1" fill-opacity="0.85">
+      <text x="346" y="182">Skills</text>
+      <text x="346" y="210">Semantic fit</text>
+      <text x="346" y="238">Role</text>
+      <text x="346" y="266">Seniority</text>
+      <text x="346" y="294">Location</text>
+    </g>
+    <g>
+      <rect x="456" y="172" width="240" height="12" rx="6" fill="#F7F9E1" fill-opacity="0.08"/>
+      <rect class="bar b1" x="456" y="172" width="216" height="12" rx="6" fill="#CAFFA6"/>
+      <rect x="456" y="200" width="240" height="12" rx="6" fill="#F7F9E1" fill-opacity="0.08"/>
+      <rect class="bar b2" x="456" y="200" width="120" height="12" rx="6" fill="#A9E0F1"/>
+      <rect x="456" y="228" width="240" height="12" rx="6" fill="#F7F9E1" fill-opacity="0.08"/>
+      <rect class="bar b3" x="456" y="228" width="72" height="12" rx="6" fill="#A9E0F1"/>
+      <rect x="456" y="256" width="240" height="12" rx="6" fill="#F7F9E1" fill-opacity="0.08"/>
+      <rect class="bar b4" x="456" y="256" width="48" height="12" rx="6" fill="#A9E0F1"/>
+      <rect x="456" y="284" width="240" height="12" rx="6" fill="#F7F9E1" fill-opacity="0.08"/>
+      <rect class="bar b5" x="456" y="284" width="24" height="12" rx="6" fill="#A9E0F1"/>
+    </g>
+    <g font-size="13" fill="#F7F9E1" fill-opacity="0.6" text-anchor="end">
+      <text x="726" y="182">45%</text><text x="726" y="210">25%</text><text x="726" y="238">15%</text><text x="726" y="266">10%</text><text x="726" y="294">5%</text>
+    </g>
+
+    <!-- Stage 2 -->
+    <g class="stage2">
+      <rect x="770" y="88" width="370" height="232" rx="20" fill="#F7F9E1"/>
+      <text x="796" y="124" font-size="19" font-weight="800" fill="#204654">Stage 2 · on request</text>
+      <text x="796" y="146" font-size="14" fill="#204654" fill-opacity="0.7">LLM recruiter view for jobs you pick</text>
+      <g font-size="14" fill="#204654">
+        <text x="796" y="184">✓  Requirement checklist with evidence</text>
+        <text x="796" y="210">✓  ATS keyword coverage</text>
+        <text x="796" y="236">✓  Blockers only with a quote from the post</text>
+      </g>
+      <g class="chipA"><rect x="796" y="262" width="88" height="32" rx="16" fill="#3aa65a"/><text x="840" y="283" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Apply</text></g>
+      <g class="chipS"><rect x="894" y="262" width="96" height="32" rx="16" fill="#f0b429"/><text x="942" y="283" font-size="14" font-weight="700" fill="#204654" text-anchor="middle">Stretch</text></g>
+      <g class="chipK"><rect x="1000" y="262" width="80" height="32" rx="16" fill="#e5534b"/><text x="1040" y="283" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Skip</text></g>
+    </g>
+  </g>
+</svg>
