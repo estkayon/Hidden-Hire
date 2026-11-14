@@ -1,4 +1,8 @@
-"""Pull the private data repo, import new jobs into the local database, then score them."""
+"""Pull the data repo, import new jobs into the local database, then score them.
+
+Jobs come from the data repo (filled by GitHub Actions every 3 hours) and from data/jobs,
+where a local `python -m fetcher.run` writes when Actions is not available.
+"""
 
 import json
 import logging
@@ -6,6 +10,7 @@ import os
 import subprocess
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
+from itertools import chain
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -21,6 +26,7 @@ from fetcher.models import Job as JobRecord
 from fetcher.normalize import normalize_job
 
 REPO_DIR = Path(__file__).resolve().parent.parent / "data" / "repo"
+LOCAL_DIR = REPO_DIR.parent
 GIT_TIMEOUT = 120
 
 log = logging.getLogger("sync")
@@ -159,7 +165,8 @@ def main() -> None:
     init_db()
     now = datetime.now(UTC)
     with SessionLocal.begin() as session:
-        added = import_jobs(session, read_records(REPO_DIR), now)
+        records = chain(read_records(REPO_DIR), read_records(LOCAL_DIR))
+        added = import_jobs(session, records, now)
         removed = delete_old_jobs(session, now)
         runs = import_health(session, REPO_DIR)
     log.info(
